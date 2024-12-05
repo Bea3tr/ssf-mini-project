@@ -18,6 +18,8 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import ssf.budgetbliss.models.User;
+import ssf.budgetbliss.services.UserService;
+
 import static ssf.budgetbliss.models.Constants.*;
 
 @Repository
@@ -29,6 +31,9 @@ public class UserRepository {
 
     @Autowired @Qualifier("redis-0")
     private RedisTemplate<String, Object> template;
+
+    @Autowired
+    private UserService userSvc;
 
     public User dbToUser(HashOperations<String, String, String> hashOps, String userId) {
         logger.info("[Repo] Retrieving user information from database");
@@ -67,19 +72,20 @@ public class UserRepository {
         Map<String, Object> values = new HashMap<>();
         values.put(PASSWORD, password);
         values.put(BALANCE, 0f);
+        values.put(DEF_CURR, "SGD");
         values.put(TRANSACTIONS, "[%s] Created %s".formatted(df.format(new Date()), userId));
         
         hashOps.putAll(userId, values);
     }
 
-    public void insertUser(HashOperations<String, String, Object> hashOps, String userId, User user) {
-        Map<String, Object> values = new HashMap<>();
-        values.put(PASSWORD, user.getPassword());
-        values.put(BALANCE, user.getBalance());
-        values.put(TRANSACTIONS, arrayToString(user.getTransactions(), ","));
+    // public void insertUser(HashOperations<String, String, Object> hashOps, String userId, User user) {
+    //     Map<String, Object> values = new HashMap<>();
+    //     values.put(PASSWORD, user.getPassword());
+    //     values.put(BALANCE, user.getBalance());
+    //     values.put(TRANSACTIONS, arrayToString(user.getTransactions(), ","));
 
-        hashOps.putAll(userId, values);
-    }
+    //     hashOps.putAll(userId, values);
+    // }
 
     public void updateUser(HashOperations<String, String, Object> hashOps, String userId, JsonObject user) {
         Set<String> details = user.keySet();
@@ -122,31 +128,24 @@ public class UserRepository {
         HashOperations<String, String, Object> hashOps = template.opsForHash();
 
         float balance = Float.parseFloat(hashOps.get(userId, BALANCE).toString());
-        float catBal = Float.parseFloat(hashOps.get(userId, cashflow + "_" + trans_type).toString());
+        float catBal = 0f;
+        if(hashOps.hasKey(userId, cashflow + "_" + trans_type)) {
+            catBal = Float.parseFloat(hashOps.get(userId, cashflow + "_" + trans_type).toString());
+        } 
         String transactions = hashOps.get(userId, TRANSACTIONS).toString();
+        String toCurr = hashOps.get(userId, DEF_CURR).toString();
+        float amtToCurr = amt * userSvc.convertCurrency(fromCurr, toCurr);
 
         if(cashflow.equals("IN"))
-            balance += amt;
+            balance += amtToCurr;
         else 
-            balance -= amt;
+            balance -= amtToCurr;
 
-        catBal += amt;
-        transactions += ",[%s] [%s] %s: $0.2f".formatted(df.format(new Date()), cashflow, trans_type, amt);
+        catBal += amtToCurr;
+        transactions += ",[%s] [%s] %s: $0.2f".formatted(df.format(new Date()), cashflow, trans_type, amtToCurr);
         hashOps.put(userId, BALANCE, balance);
         hashOps.put(userId, cashflow + "_" + trans_type, catBal);
         hashOps.put(userId, TRANSACTIONS, transactions);
-    }
-    
-    public String arrayToString(String[] arr, String delimiter) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < arr.length; i++) {
-            if(i != arr.length-1) {
-                sb.append(arr[i]).append(delimiter);
-            } else {
-                sb.append(arr[i]);
-            }
-        }
-        return sb.substring(0, sb.length()-1);
     }
 
     public void changeUserId(String userId, String newId) {
@@ -165,5 +164,17 @@ public class UserRepository {
         hashOps.put(userId, PASSWORD, newPassword);
         logger.info("[Repo] Password changed successfully");
         return true;
+    }
+
+    public String arrayToString(String[] arr, String delimiter) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < arr.length; i++) {
+            if(i != arr.length-1) {
+                sb.append(arr[i]).append(delimiter);
+            } else {
+                sb.append(arr[i]);
+            }
+        }
+        return sb.substring(0, sb.length()-1);
     }
 }

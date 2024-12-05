@@ -46,21 +46,9 @@
                         <option value="out">OUT</option>
                     </select>
                 </td>
-                <td>
-                    <select class="trans" name="transtype">
-                        <option value="salary">Salary</option>
-                        <option value="allowance">Allowance</option>
-                        <option value="interest">Interest</option>
-                        <option value="savings_plan">Savings plan</option>
-                        <option value="investment">Investment</option>
-                        <option value="insure_death">Insurance [Death]</option>
-                        <option value="insure_tpd">Insurance [TPD]</option>
-                        <option value="insure_accident">Insurance [Accident]</option>
-                        <option value="insure_hospitalisation">Insurance [Hosp]</option>
-                        <option value="necessities">Necessities</option>
-                        <option value="wants">Wants</option>
-                        <option value="others">Others</option>
-                    </select>
+                <td class="right">
+                    Category: 
+                    <input type="text" name="transtype">
                 </td>
             </tr>
             <tr>
@@ -70,7 +58,7 @@
                         <option value="jpy">JPY</option>
                     </select>
                 </td>
-                <td>AMT: $
+                <td class="right">AMT: $
                     <input type="number" min="1" name="amt">
                 </td>
             </tr>

@@ -9,4 +9,5 @@ public class Constants {
     public static final String TRANSACTIONS = "transactions";
     public static final String USERID = "userId";
     
+    public static final String CURR_URL = "https://api.freecurrencyapi.com/v1/currencies";
 }

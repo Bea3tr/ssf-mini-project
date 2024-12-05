@@ -1,7 +1,5 @@
 package ssf.budgetbliss.models;
 
-import java.util.Arrays;
-
 public class User {
 
     private String userId;

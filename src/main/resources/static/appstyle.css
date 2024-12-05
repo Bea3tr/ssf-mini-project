@@ -197,3 +197,7 @@ button {
     font-size: 100%;
     font-family: "Nunito", sans-serif;
 }
+
+.right {
+    text-align: right;
+}

@@ -74,7 +74,7 @@ public class UserController {
         String transType = form.getFirst("transtype");
         String currency = form.getFirst("currency");
         float amt = Float.parseFloat(form.getFirst("amt"));
-        userSvc.updateBal(userId, cashflow, transType, amt);
+        userSvc.updateBal(userId, currency, cashflow, transType, amt);
 
         User user = userSvc.getUserById(userId);
         model.addAttribute("user", user);
