@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/appstyle.css">
+    <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
+    <title>Logs</title>
+</head>
+<body data-th-object="${user}">
+
+    <table class="top-table">
+        <tr>
+            <td class="logo-column"><img src="../static/image/new_logo.png"></td>
+            <td class="logo-name">
+                BudgetBliss
+            </td>
+            <td class="dropdown">
+                <div class="drop-button"><span data-th-text="*{userId}"></span></div>
+                <div class="drop-content">
+                    <a href="/changeid">Change User ID</a>
+                    <a href="/changepassword">Change Password</a>
+                </div>
+            </td>
+            <td class="login-column">
+                <form method="POST" action="/logout">
+                    <div>
+                        <button class="logout" type="submit">Logout</button>
+                    </div>
+                </form>
+            </td>
+        </tr>
+    </table>
+
+    <div class="header">
+        <span>LOGS</span>
+    </div>
+
+    <form method="POST" action="/logs">
+        <table class="log-form">
+            <tr>
+                <td>
+                    <select name="cashflow">
+                        <option value="in">IN</option>
+                        <option value="out">OUT</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="trans" name="transtype">
+                        <option value="salary">Salary</option>
+                        <option value="allowance">Allowance</option>
+                        <option value="interest">Interest</option>
+                        <option value="savings_plan">Savings plan</option>
+                        <option value="investment">Investment</option>
+                        <option value="insure_death">Insurance [Death]</option>
+                        <option value="insure_tpd">Insurance [TPD]</option>
+                        <option value="insure_accident">Insurance [Accident]</option>
+                        <option value="insure_hospitalisation">Insurance [Hosp]</option>
+                        <option value="necessities">Necessities</option>
+                        <option value="wants">Wants</option>
+                        <option value="others">Others</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <select name="currency">
+                        <option value="sgd">SGD</option>
+                        <option value="jpy">JPY</option>
+                    </select>
+                </td>
+                <td>AMT: $
+                    <input type="number" min="1" name="amt">
+                </td>
+            </tr>
+            <tr class="button-row">
+                <td>
+                    <button type="reset">CLEAR</button>
+                </td>
+                <td>
+                    <button type="submit">LOG</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+    
+    <br>
+
+    <div class="snd-header">
+        <span>TRANSACTIONS:</span>
+    </div>
+
+    <table class="transList">
+        <tr data-th-each="transaction: *{transactions}">
+            <td data-th-text="${transaction}"></td>
+        </tr>
+    </table>
+</body>
+</html>

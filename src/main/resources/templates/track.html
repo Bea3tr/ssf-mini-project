@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/appstyle.css">
+    <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
+    <title>Track</title>
+</head>
+<body data-th-object="${user}">
+
+    <table class="top-table">
+        <tr>
+            <td class="logo-column"><img src="../static/image/new_logo.png"></td>
+            <td class="logo-name">
+                BudgetBliss
+            </td>
+            <td class="dropdown">
+                <div class="drop-button"><span data-th-text="*{userId}"></span></div>
+                <div class="drop-content">
+                    <a href="/changeid">Change User ID</a>
+                    <a href="/changepassword">Change Password</a>
+                </div>
+            </td>
+            <td class="login-column">
+                <form method="POST" action="/logout">
+                    <div>
+                        <button class="logout" type="submit">Logout</button>
+                    </div>
+                </form>
+            </td>
+        </tr>
+    </table>
+
+    <div class="header">
+        <span>TRACK</span>
+    </div>
+
+    <div class="track-header">
+        <span>Balance: $<span class="underline" data-th-text="*{balance}"></span></span>
+        <span>IN: $<span class="underline" data-th-text="${in}"></span></span>
+        <span>OUT: $<span class="underline" data-th-text="${out}"></span></span>
+    </div>
+    
+</body>
+</html>

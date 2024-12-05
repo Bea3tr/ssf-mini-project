@@ -1,0 +1,199 @@
+body {
+    background-color: white;
+    margin: 0px;
+    font-family: "Nunito", sans-serif;
+    font-size: 20px;
+}
+
+img {
+    height: 50px;
+    padding: 1px;
+}
+
+.dropdown {
+    text-align: center;
+    width: 15%;
+    background-color: #bdf5f5;
+    border: solid #bdf5f5;
+}
+
+.dropdown:hover .drop-content {
+    display: block;
+}
+
+.drop-button {
+    background-color: #bdf5f5;
+    padding: 16px;
+    border: none;
+    cursor: pointer;
+}
+
+.drop-content {
+    text-align: center;
+    font-size: 75%;
+    display: none;
+    position: absolute;
+    background-color: white;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.drop-content a {
+    color: black;
+    display: block;
+    padding: 10px 12px;
+    text-decoration: none;
+}
+
+.drop-content a:hover {
+    background-color: #f1f1f1;
+
+}
+
+.top-table {
+    position: relative;
+    width: 100%;
+    margin-bottom: 0px;
+    background-color: white;
+    border-collapse: collapse;
+    font-size: 100%;
+}
+
+.logo-column {
+    display: inline-grid;
+    grid-template-columns: auto auto;
+}
+
+.logo-name {
+    font-weight: bold;
+    font-family: "Montserrat", sans-serif;
+    display: inline-grid;
+    grid-template-columns: auto auto;
+}
+
+.login-column {
+    text-align: center;
+    background-color: gold;
+    border: solid gold;
+    width: 15%;
+}
+
+.login-column:hover {
+    background-color: goldenrod;
+    border: solid goldenrod;
+}
+
+.no-underline {
+    text-decoration: none;
+    color: black;
+}
+
+.header {
+    background-color: #006994;
+    padding: 15px;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+}
+
+.header span {
+    padding: 10px;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+.logs, .track, .info {
+    padding: 7%;
+    margin: 10px;
+    border-radius: 20px;
+    text-align: center;
+    font-weight: bolder;
+    font-size: 175%;
+}
+
+.logs {
+    background-color: #006a94b3;
+}
+
+.logs:hover, .logs a:hover, .track:hover, .track a:hover, .info:hover, .info a:hover {
+    background-color: goldenrod;
+    color: gold;
+}
+
+.track {
+    background-color: #006a9484;
+}
+
+.info {
+    background-color: #006a944c;
+}
+
+.log-form {
+    margin: auto;
+}
+
+.log-form td {
+    padding: 15px 10px;
+    font-family: "Montserrat", sans-serif;
+    font-weight: bold;
+}
+
+input, select {
+    font-family: "Montserrat", sans-serif;
+    font-weight: bold;
+    padding: 5px 2px;
+    font-size: 16px;
+}
+
+input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid black;
+}
+
+.trans {
+    float: right;
+}
+
+.transList {
+    margin: auto;
+    padding: 5px 15px;
+    font-size: 16px;
+    /* background-color: #006a9441; */
+}
+
+.snd-header {
+    background-color: goldenrod;
+    padding: 15px;
+    color: black;
+    text-align: center;
+    font-weight: bold;
+    margin-top: 0px;
+}
+
+.track-header {
+    padding: 15px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.button-row {
+    text-align: right;
+}
+
+button {
+    padding: 5px 10px;
+    font-family: "Montserrat", sans-serif;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.logout {
+    border: none;
+    background: none;
+    font-weight: 500;
+    font-size: 100%;
+    font-family: "Nunito", sans-serif;
+}
