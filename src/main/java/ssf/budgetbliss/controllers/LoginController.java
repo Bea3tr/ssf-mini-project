@@ -24,7 +24,7 @@ import ssf.budgetbliss.services.UserService;
 import static ssf.budgetbliss.models.Constants.*;
 
 @Controller
-@RequestMapping
+@RequestMapping("/login")
 public class LoginController {
 
     private static final Logger logger = Logger.getLogger(LoginController.class.getName());
@@ -32,36 +32,47 @@ public class LoginController {
     @Autowired
     private UserService userSvc;
 
-    @GetMapping("/login")
+    @GetMapping
     public String getLogin(Model model) {
+
+        // ModelAndView mav = new ModelAndView();
+        // mav.setViewName("login");
+        // mav.setStatus(HttpStatusCode.valueOf(200));
+        // mav.addObject("user", new ValidUser());
+        // return mav;
         model.addAttribute("user", new ValidUser());
         return "login";
+
     }
 
     @PostMapping("/home")
     public ModelAndView login(
-        @Valid @ModelAttribute ValidUser user,
+        @Valid @ModelAttribute("user") ValidUser user,
         BindingResult bindings,
         HttpSession sess) {
 
         ModelAndView mav = new ModelAndView();
 
-        Optional<User> opt = userSvc.getUser(user.getUserId(), user.getPassword());
+        if(bindings.hasErrors()) {
+            mav.setViewName("login");
+            mav.setStatus(HttpStatusCode.valueOf(400));
+            return mav;
+        }
+            
         if(!userSvc.userExists(user.getUserId())) {
             logger.info("[Controller] User " + user.getUserId() + " does not exist");
-            FieldError err = new FieldError("user", "userId", "User does not exist");
+            FieldError err = new FieldError("user", "userId", "User does not exist, please sign up");
             bindings.addError(err);
             mav.setViewName("login");
             mav.setStatus(HttpStatusCode.valueOf(404));
-            mav.addObject("user", new ValidUser());
             return mav;
         }
+        Optional<User> opt = userSvc.getUser(user.getUserId(), user.getPassword());
         if(opt.isEmpty()) {
             FieldError err = new FieldError("user", "password", "Incorrect password");
             bindings.addError(err);
             mav.setViewName("login");
             mav.setStatus(HttpStatusCode.valueOf(401));
-            mav.addObject("user", new ValidUser());
             return mav;
         }
         // Add user to session only when login is successful

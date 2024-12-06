@@ -1,5 +1,6 @@
 package ssf.budgetbliss.repositories;
 
+import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -10,15 +11,21 @@ import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonReader;
 import ssf.budgetbliss.models.User;
-import ssf.budgetbliss.services.UserService;
 
 import static ssf.budgetbliss.models.Constants.*;
 
@@ -29,25 +36,25 @@ public class UserRepository {
     private static final Logger logger = Logger.getLogger(UserRepository.class.getName());
     private SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy");
 
+    @Value("${curr.apikey}")
+    private String CURR_APIKEY;
+
     @Autowired @Qualifier("redis-0")
     private RedisTemplate<String, Object> template;
 
-    @Autowired
-    private UserService userSvc;
-
-    public User dbToUser(HashOperations<String, String, String> hashOps, String userId) {
+    public User dbToUser(HashOperations<String, String, Object> hashOps, String userId) {
         logger.info("[Repo] Retrieving user information from database");
-        Map<String, String> userDetails = hashOps.entries(userId);
+        Map<String, Object> userDetails = hashOps.entries(userId);
         float in = 0f;
         float out = 0f;
         for(String hashkey : userDetails.keySet()) {
             if(hashkey.contains("in_"))
-                in += Float.parseFloat(userDetails.get(hashkey));
+                in += Float.parseFloat(userDetails.get(hashkey).toString());
             else if (hashkey.contains("out_"))
-                out += Float.parseFloat(userDetails.get(hashkey));
+                out += Float.parseFloat(userDetails.get(hashkey).toString());
         }
-        User user = new User(userId, userDetails.get(PASSWORD), userDetails.get(DEF_CURR), Float.parseFloat(userDetails.get(BALANCE)),
-                         in, out, userDetails.get(TRANSACTIONS).split(","));
+        User user = new User(userId, userDetails.get(PASSWORD).toString(), userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
+                         in, out, userDetails.get(TRANSACTIONS).toString().split(","));
 
         return user;
     }
@@ -71,7 +78,7 @@ public class UserRepository {
         HashOperations<String, String, Object> hashOps = template.opsForHash();
         Map<String, Object> values = new HashMap<>();
         values.put(PASSWORD, password);
-        values.put(BALANCE, 0f);
+        values.put(BALANCE, 0);
         values.put(DEF_CURR, "SGD");
         values.put(TRANSACTIONS, "[%s] Created %s".formatted(df.format(new Date()), userId));
         
@@ -102,10 +109,10 @@ public class UserRepository {
 
     public Optional<User> getUser(String userId, String password) {
         logger.info("[Repo] Retrieving user information: " + userId);
-        HashOperations<String, String, String> hashOps = template.opsForHash();
+        HashOperations<String, String, Object> hashOps = template.opsForHash();
         User user = new User();
 
-        String correctPassword = hashOps.get(userId, PASSWORD);
+        String correctPassword = hashOps.get(userId, PASSWORD).toString();
         if(!correctPassword.equals(password)) {
             logger.info("[Repo] Wrong password");
             return Optional.empty();
@@ -118,12 +125,12 @@ public class UserRepository {
     }
 
     public User getUserById(String userId) {
-        HashOperations<String, String, String> hashOps = template.opsForHash();
+        HashOperations<String, String, Object> hashOps = template.opsForHash();
         User user = dbToUser(hashOps, userId);
         return user;
     }
 
-    public void updateBal(String userId, String fromCurr, String cashflow, String trans_type, float amt) {
+    public void updateBal(String userId, String toCurr, String cashflow, String trans_type, float amt) {
         logger.info("[Repo] Updating balance");
         HashOperations<String, String, Object> hashOps = template.opsForHash();
 
@@ -133,16 +140,18 @@ public class UserRepository {
             catBal = Float.parseFloat(hashOps.get(userId, cashflow + "_" + trans_type).toString());
         } 
         String transactions = hashOps.get(userId, TRANSACTIONS).toString();
-        String toCurr = hashOps.get(userId, DEF_CURR).toString();
-        float amtToCurr = amt * userSvc.convertCurrency(fromCurr, toCurr);
+        String fromCurr = hashOps.get(userId, DEF_CURR).toString();
+        if(!fromCurr.equals(toCurr)) {
+            amt *= convertCurrency(fromCurr, toCurr);
+        }
 
         if(cashflow.equals("IN"))
-            balance += amtToCurr;
+            balance += amt;
         else 
-            balance -= amtToCurr;
+            balance -= amt;
 
-        catBal += amtToCurr;
-        transactions += ",[%s] [%s] %s: $0.2f".formatted(df.format(new Date()), cashflow, trans_type, amtToCurr);
+        catBal += amt;
+        transactions += ",[%s] [%s] %s: %s 0.2f".formatted(df.format(new Date()), cashflow, trans_type, toCurr, amt);
         hashOps.put(userId, BALANCE, balance);
         hashOps.put(userId, cashflow + "_" + trans_type, catBal);
         hashOps.put(userId, TRANSACTIONS, transactions);
@@ -166,6 +175,10 @@ public class UserRepository {
         return true;
     }
 
+    public void updateCurr(HashOperations<String, String, Object> hashOps, String userId, float conversion) {
+
+    }
+
     public String arrayToString(String[] arr, String delimiter) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < arr.length; i++) {
@@ -176,5 +189,29 @@ public class UserRepository {
             }
         }
         return sb.substring(0, sb.length()-1);
+    }
+
+    public float convertCurrency(String from, String to) {
+        String url = UriComponentsBuilder.fromUriString(CURR_URL)
+            .queryParam("apikey", CURR_APIKEY)
+            .queryParam("base_currency", from)
+            .queryParam("currencies", to)
+            .toUriString();
+        
+        RequestEntity<Void> req = RequestEntity.get(url)
+            .accept(MediaType.APPLICATION_JSON)
+            .build();
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> resp = restTemplate.exchange(req, String.class);
+        String payload = resp.getBody();
+
+        JsonReader reader = Json.createReader(new StringReader(payload));
+        float conversion = Float.parseFloat(reader.readObject()
+            .getJsonObject("data")
+            .getJsonNumber(to)
+            .toString());
+        
+        return conversion;
     }
 }

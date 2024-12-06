@@ -5,6 +5,7 @@ import static ssf.budgetbliss.models.Constants.CURR_URL;
 import java.io.StringReader;
 import java.util.Optional;
 // import java.util.logging.Logger;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import ssf.budgetbliss.models.User;
 import ssf.budgetbliss.repositories.UserRepository;
@@ -25,7 +27,7 @@ public class UserService {
 
     // private static final Logger logger = Logger.getLogger(UserService.class.getName());
     @Value("${curr.apikey}")
-    private static String CURR_APIKEY;
+    private String CURR_APIKEY;
 
     @Autowired
     private UserRepository userRepo;
@@ -57,28 +59,25 @@ public class UserService {
     public void changePassword(String userId, String password, String newPassword) {
         userRepo.changePassword(userId, password, newPassword);
     }
-    
-    public float convertCurrency(String from, String to) {
+
+    public Set<String> currencyList() {
         String url = UriComponentsBuilder.fromUriString(CURR_URL)
             .queryParam("apikey", CURR_APIKEY)
-            .queryParam("base_currency", from)
-            .queryParam("currencies", to)
             .toUriString();
-        
+
         RequestEntity<Void> req = RequestEntity.get(url)
             .accept(MediaType.APPLICATION_JSON)
             .build();
-
+        
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> resp = restTemplate.exchange(req, String.class);
         String payload = resp.getBody();
 
         JsonReader reader = Json.createReader(new StringReader(payload));
-        float conversion = Float.parseFloat(reader.readObject()
-            .getJsonObject("data")
-            .getJsonNumber(to)
-            .toString());
-        
-        return conversion;
+        JsonObject data = reader.readObject().getJsonObject("data");
+        Set<String> currList = data.keySet();
+
+        return currList;
     }
+    
 }

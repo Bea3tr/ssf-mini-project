@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../static/loginstyle.css">
+    <link rel="stylesheet" href="/loginstyle.css">
     <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
     <title>Login</title>
 </head>
@@ -13,21 +13,21 @@
     <div class="tables">
         <table class="top-table">
             <tr>
-                <td class="logo-column"><img src="../static/image/new_logo.png"></td>
+                <td class="logo-column"><img src="/image/new_logo.png"></td>
                 <td class="logo-name">
                     BudgetBliss
                 </td>
             </tr>
         </table>
     
-        <form method="POST" action="/home" data-th-object="${user}">
+        <form method="POST" action="/login/home" data-th-object="${user}">
             <table class="login-table">
                 <tr>
                     <td class="input-label">User ID: </td>
                 </tr>
                 <tr>
                     <td>
-                        <input type="text" name="userId" data-th-field="*{userId}" required>
+                        <input type="text" data-th-field="*{userId}">
                         <div data-th-if="${#fields.hasErrors('userId')}"
                             data-th-errors="*{userId}" data-th-errorclass="error">
                         </div>
@@ -38,7 +38,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <input type="password" name="password" data-th-field="*{password}"  required>
+                        <input type="password" data-th-field="*{password}">
                         <div data-th-if="${#fields.hasErrors('password')}"
                             data-th-errors="*{password}" data-th-errorclass="error">
                         </div>

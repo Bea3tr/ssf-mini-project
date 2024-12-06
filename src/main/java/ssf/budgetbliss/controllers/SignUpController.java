@@ -22,7 +22,7 @@ import ssf.budgetbliss.services.UserService;
 import static ssf.budgetbliss.models.Constants.*;
 
 @Controller
-@RequestMapping
+@RequestMapping("/signup")
 public class SignUpController {
 
     private static final Logger logger = Logger.getLogger(SignUpController.class.getName());
@@ -30,7 +30,7 @@ public class SignUpController {
     @Autowired 
     private UserService userSvc;
 
-    @GetMapping("/signup")
+    @GetMapping
     public String getSignup(Model model) {
         logger.info("Redirecting to signup page");
         model.addAttribute("user", new ValidUser());
@@ -39,7 +39,7 @@ public class SignUpController {
 
     @PostMapping("/home") 
     public String signup(Model model,
-        @Valid @ModelAttribute ValidUser user,
+        @Valid @ModelAttribute("user") ValidUser user,
         BindingResult bindings,
         HttpSession sess) {
 
@@ -47,7 +47,6 @@ public class SignUpController {
             logger.info("[Controller] User exists");
             FieldError err = new FieldError("user", "userId", "User exists, enter another id");
             bindings.addError(err);
-            model.addAttribute("user", new ValidUser());
             return "signup";
         }
 
@@ -55,7 +54,6 @@ public class SignUpController {
             logger.info("[Repo] Sign up unsuccessful");
             FieldError err = new FieldError("user", "confirmPassword", "Password does not match");
             bindings.addError(err);
-            model.addAttribute("user", new ValidUser());
             return "signup";
         }
         // Add user to session only when login is successful

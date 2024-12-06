@@ -36,7 +36,7 @@ public class UserController {
         return "index";
     }
 
-    @GetMapping("/{userid}/logs") 
+    @GetMapping("/{userId}/logs") 
     public ModelAndView getUserLogs(
         @PathVariable String userId,
         HttpSession sess) {
@@ -59,6 +59,7 @@ public class UserController {
         mav.setViewName("logs");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
+        mav.addObject("currList", userSvc.currencyList());
 
         return mav;
     }
