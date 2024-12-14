@@ -103,6 +103,11 @@ button {
     font-weight: bold;
 }
 
+.underline {
+    text-decoration: underline;
+    color: red;
+}
+
 .error {
     font-size:  12px;
     color: red;

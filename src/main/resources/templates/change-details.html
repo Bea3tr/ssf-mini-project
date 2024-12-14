@@ -6,7 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/loginstyle.css">
     <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
-    <title>Sign Up</title>
+    <title>Change Password</title>
 </head>
 <body>
 
@@ -20,36 +20,36 @@
             </tr>
         </table>
     
-        <form method="POST" action="/signup/home" data-th-object="${user}">
+        <form method="POST" action="/changedetails" data-th-object="${user}">
             <table class="login-table">
                 <tr>
-                    <td class="input-label">User ID: </td>
+                    <td class="input-label">New User ID: </td>
                 </tr>
                 <tr>
                     <td>
-                        <input type="text" name="userId" data-th-field="*{userId}" required>
+                        <input type="text" name="userId" data-th-field="*{userId}">
                         <div data-th-if="${#fields.hasErrors('userId')}"
-                            data-th-errors="*{userId}" data-th-errorclass="error">
+                                data-th-errors="*{userId}" data-th-errorclass="error">
                         </div>
                     </td>
                 </tr>
                 <tr>
-                    <td class="input-label">Password: </td>
+                    <td class="input-label">Old Password: </td>
                 </tr>
                 <tr>
                     <td>
-                        <input type="password" name="password" data-th-field="*{password}"  required>
+                        <input type="text" name="password" data-th-field="*{password}">
                         <div data-th-if="${#fields.hasErrors('password')}"
                             data-th-errors="*{password}" data-th-errorclass="error">
                         </div>
                     </td>
                 </tr>
                 <tr>
-                    <td class="input-label">Confirm Password: </td>
+                    <td class="input-label">New Password: </td>
                 </tr>
                 <tr>
                     <td>
-                        <input type="password" name="confirmPassword" data-th-field="*{confirmPassword}" required>
+                        <input type="password" name="confirmPassword" data-th-field="*{confirmPassword}" required minlength="8">
                         <div data-th-if="${#fields.hasErrors('confirmPassword')}"
                             data-th-errors="*{confirmPassword}" data-th-errorclass="error">
                         </div>
@@ -57,14 +57,7 @@
                 </tr>
                 <tr>
                     <td colspan="2">
-                        <button type="submit">Sign up</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <div>
-                            <span>Existing user? <a href="/login">Login</a></span>
-                        </div>
+                        <button type="submit">Save</button>
                     </td>
                 </tr>
             </table>

@@ -31,8 +31,11 @@ public class SignUpController {
     private UserService userSvc;
 
     @GetMapping
-    public String getSignup(Model model) {
-        logger.info("Redirecting to signup page");
+    public String getSignup(Model model, HttpSession sess) {
+        logger.info("[SignUp Controller] Redirecting to signup page");
+        if (sess.getAttribute(USERID) != null) {
+            sess.invalidate();
+        }
         model.addAttribute("user", new ValidUser());
         return "signup";
     }
@@ -43,27 +46,30 @@ public class SignUpController {
         BindingResult bindings,
         HttpSession sess) {
 
+        if(bindings.hasErrors())
+            return "signup";
+
         if(userSvc.userExists(user.getUserId())) {
-            logger.info("[Controller] User exists");
+            logger.info("[SignUp Controller] User exists");
             FieldError err = new FieldError("user", "userId", "User exists, enter another id");
             bindings.addError(err);
             return "signup";
         }
 
         if(!user.getPassword().equals(user.getConfirmPassword())) {
-            logger.info("[Repo] Sign up unsuccessful");
+            logger.info("[SignUp Controller] Sign up unsuccessful");
             FieldError err = new FieldError("user", "confirmPassword", "Password does not match");
             bindings.addError(err);
             return "signup";
         }
-        // Add user to session only when login is successful
+        // Add user to session only when signup is successful
         String userId = (String) sess.getAttribute(USERID);
         if(userId == null) {
             userId = user.getUserId();
             sess.setAttribute(USERID, userId);
         }
         userSvc.insertUser(userId, user.getPassword());
-        logger.info("[Repo] Sign up successful");
+        logger.info("[SignUp Controller] Sign up successful");
         Optional<User> opt = userSvc.getUser(user.getUserId(), user.getPassword());
         User userSuccess = opt.get();
         model.addAttribute("user", userSuccess);

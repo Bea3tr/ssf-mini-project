@@ -33,13 +33,11 @@ public class LoginController {
     private UserService userSvc;
 
     @GetMapping
-    public String getLogin(Model model) {
-
-        // ModelAndView mav = new ModelAndView();
-        // mav.setViewName("login");
-        // mav.setStatus(HttpStatusCode.valueOf(200));
-        // mav.addObject("user", new ValidUser());
-        // return mav;
+    public String getLogin(Model model, HttpSession sess) {
+        
+        if (sess.getAttribute(USERID) != null) {
+            sess.invalidate();
+        }
         model.addAttribute("user", new ValidUser());
         return "login";
 

@@ -4,8 +4,10 @@ import static ssf.budgetbliss.models.Constants.CURR_URL;
 
 import java.io.StringReader;
 import java.util.Optional;
-// import java.util.logging.Logger;
+import java.util.logging.Logger;
 import java.util.Set;
+
+import static ssf.budgetbliss.models.Constants.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,13 +21,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
+import jakarta.servlet.http.HttpSession;
 import ssf.budgetbliss.models.User;
 import ssf.budgetbliss.repositories.UserRepository;
 
 @Service
 public class UserService {
 
-    // private static final Logger logger = Logger.getLogger(UserService.class.getName());
+    private static final Logger logger = Logger.getLogger(UserService.class.getName());
+
     @Value("${curr.apikey}")
     private String CURR_APIKEY;
 
@@ -56,28 +60,47 @@ public class UserService {
         userRepo.changeUserId(userId, newId);
     }
 
-    public void changePassword(String userId, String password, String newPassword) {
-        userRepo.changePassword(userId, password, newPassword);
+    public boolean changePassword(String userId, String password, String newPassword) {
+        return userRepo.changePassword(userId, password, newPassword);
+    }
+
+    public void deleteUser(String userId) {
+        userRepo.deleteUser(userId);
     }
 
     public Set<String> currencyList() {
+        Set<String> currList = userRepo.getCurrency();
+        if(currList.size() > 0) {
+            return currList;
+        }
         String url = UriComponentsBuilder.fromUriString(CURR_URL)
-            .queryParam("apikey", CURR_APIKEY)
-            .toUriString();
+                .queryParam("apikey", CURR_APIKEY)
+                .toUriString();
 
         RequestEntity<Void> req = RequestEntity.get(url)
-            .accept(MediaType.APPLICATION_JSON)
-            .build();
-        
+                .accept(MediaType.APPLICATION_JSON)
+                .build();
+
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> resp = restTemplate.exchange(req, String.class);
         String payload = resp.getBody();
 
         JsonReader reader = Json.createReader(new StringReader(payload));
         JsonObject data = reader.readObject().getJsonObject("data");
-        Set<String> currList = data.keySet();
+        currList = data.keySet();
+        userRepo.insertCurrencies(currList);
 
         return currList;
     }
-    
+
+    public boolean isAuth(HttpSession sess, String userId) {
+        String id = (String) sess.getAttribute(USERID);
+        if (id == null || !userId.equals(id)) {
+            logger.info("[User Service] Unauthenticated access");
+            return false;
+        }
+        logger.info("[User Service] Access authenticated");
+        return true;
+    }
+
 }

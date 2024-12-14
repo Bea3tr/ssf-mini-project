@@ -19,8 +19,8 @@
             <td class="dropdown">
                 <div class="drop-button"><span data-th-text="*{userId}"></span></div>
                 <div class="drop-content">
-                    <a href="/changeid">Change User ID</a>
-                    <a href="/changepassword">Change Password</a>
+                    <a data-th-href="@{/{id}/changedetails(id=*{userId})}">Change User Details</a>
+                    <a data-th-href="@{/{id}/delete(id=*{userId})}">Delete account</a>
                 </div>
             </td>
             <td class="login-column">

@@ -10,6 +10,7 @@ public class ValidUser {
 
     @NotNull(message="Password cannot be null")
     @NotEmpty(message="Password cannot be empty")
+    @Size(min=8, message="Password must be at least 8 characters")
     private String password;
     private String confirmPassword;
 

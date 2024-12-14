@@ -4,17 +4,20 @@ import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
@@ -22,8 +25,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 import ssf.budgetbliss.models.User;
 
@@ -42,7 +43,7 @@ public class UserRepository {
     @Autowired @Qualifier("redis-0")
     private RedisTemplate<String, Object> template;
 
-    public User dbToUser(HashOperations<String, String, Object> hashOps, String userId) {
+    private User dbToUser(HashOperations<String, String, Object> hashOps, String userId) {
         logger.info("[Repo] Retrieving user information from database");
         Map<String, Object> userDetails = hashOps.entries(userId);
         float in = 0f;
@@ -59,18 +60,6 @@ public class UserRepository {
         return user;
     }
 
-    public JsonObject dbToJson(HashOperations<String, String, String> hashOps, String userId) {
-        logger.info("[Repo] Retrieving user information from database");
-        Map<String, String> userDetails = hashOps.entries(userId);
-        JsonObjectBuilder builder = Json.createObjectBuilder();
-        for(String hashKey : userDetails.keySet()) {
-            builder.add(hashKey, userDetails.get(hashKey));
-        }
-        JsonObject details = builder.build();
-
-        return Json.createObjectBuilder().add(userId, details).build();
-    }
-
     // hset userId password password
     public void insertUser(String userId, String password) {
         logger.info("[Repo] Inserting new user: " + userId);
@@ -78,28 +67,10 @@ public class UserRepository {
         HashOperations<String, String, Object> hashOps = template.opsForHash();
         Map<String, Object> values = new HashMap<>();
         values.put(PASSWORD, password);
-        values.put(BALANCE, 0);
+        values.put(BALANCE, 0f);
         values.put(DEF_CURR, "SGD");
         values.put(TRANSACTIONS, "[%s] Created %s".formatted(df.format(new Date()), userId));
         
-        hashOps.putAll(userId, values);
-    }
-
-    // public void insertUser(HashOperations<String, String, Object> hashOps, String userId, User user) {
-    //     Map<String, Object> values = new HashMap<>();
-    //     values.put(PASSWORD, user.getPassword());
-    //     values.put(BALANCE, user.getBalance());
-    //     values.put(TRANSACTIONS, arrayToString(user.getTransactions(), ","));
-
-    //     hashOps.putAll(userId, values);
-    // }
-
-    public void updateUser(HashOperations<String, String, Object> hashOps, String userId, JsonObject user) {
-        Set<String> details = user.keySet();
-        Map<String, Object> values = new HashMap<>();
-        for(String key : details) {
-            values.put(key, user.get(key));
-        }
         hashOps.putAll(userId, values);
     }
 
@@ -133,6 +104,13 @@ public class UserRepository {
     public void updateBal(String userId, String toCurr, String cashflow, String trans_type, float amt) {
         logger.info("[Repo] Updating balance");
         HashOperations<String, String, Object> hashOps = template.opsForHash();
+        String fromCurr = hashOps.get(userId, DEF_CURR).toString();
+        if(!fromCurr.equals(toCurr)) {
+            logger.info("[Repo] Updating currency from %s to %s".formatted(fromCurr, toCurr));
+            float conversion = convertCurrency(fromCurr, toCurr);
+            amt *= conversion;
+            updateCurr(hashOps, userId, toCurr, conversion);
+        }
 
         float balance = Float.parseFloat(hashOps.get(userId, BALANCE).toString());
         float catBal = 0f;
@@ -140,10 +118,6 @@ public class UserRepository {
             catBal = Float.parseFloat(hashOps.get(userId, cashflow + "_" + trans_type).toString());
         } 
         String transactions = hashOps.get(userId, TRANSACTIONS).toString();
-        String fromCurr = hashOps.get(userId, DEF_CURR).toString();
-        if(!fromCurr.equals(toCurr)) {
-            amt *= convertCurrency(fromCurr, toCurr);
-        }
 
         if(cashflow.equals("IN"))
             balance += amt;
@@ -151,14 +125,15 @@ public class UserRepository {
             balance -= amt;
 
         catBal += amt;
-        transactions += ",[%s] [%s] %s: %s 0.2f".formatted(df.format(new Date()), cashflow, trans_type, toCurr, amt);
+        transactions += ",[%s] [%s] %s: %s %.2f".formatted(df.format(new Date()), cashflow.toUpperCase(), 
+            trans_type.toUpperCase(), toCurr, amt);
         hashOps.put(userId, BALANCE, balance);
         hashOps.put(userId, cashflow + "_" + trans_type, catBal);
         hashOps.put(userId, TRANSACTIONS, transactions);
     }
 
-    public void changeUserId(String userId, String newId) {
-        JsonObject user = dbToJson(template.opsForHash(), userId);
+    public void changeUserId(String userId, String newId) { 
+        User user = dbToUser(template.opsForHash(), userId);
         template.delete(userId);
         updateUser(template.opsForHash(), newId, user);
     }
@@ -175,11 +150,56 @@ public class UserRepository {
         return true;
     }
 
-    public void updateCurr(HashOperations<String, String, Object> hashOps, String userId, float conversion) {
-
+    public void deleteUser(String userId) {
+        logger.info("[Repo] Deleting user: " + userId);
+        template.delete(userId);
     }
 
-    public String arrayToString(String[] arr, String delimiter) {
+    public Set<String> getCurrency() {
+        if(template.hasKey("currencyList"))
+            return Stream.of(template.opsForValue().get("currencyList")
+                            .toString()
+                            .trim()
+                            .split(","))
+                            .collect(Collectors.toSet());
+        return new HashSet<>();
+    }
+
+    public void insertCurrencies(Set<String> currList) {
+        String currencies = currList.toString()
+            .replaceAll("\\[", "")
+            .replaceAll("\\]", "")
+            .replaceAll(" ", "");
+        template.opsForValue().set("currencyList", currencies);
+        template.expire("currencyList", 30, TimeUnit.DAYS);
+    }
+
+    private void updateUser(HashOperations<String, String, Object> hashOps, String userId, User user) {
+        Map<String, Object> values = new HashMap<>();
+        values.put(USERID, user.getUserId());
+        values.put(PASSWORD, user.getPassword());
+        values.put(DEF_CURR, user.getDefCurr());
+        values.put(BALANCE, user.getBalance());
+        values.put(IN, user.getIn());
+        values.put(OUT, user.getOut());
+        values.put(TRANSACTIONS, arrayToString(user.getTransactions(), ","));
+        hashOps.putAll(userId, values);
+    }
+
+    private void updateCurr(HashOperations<String, String, Object> hashOps, String userId, String toCurr, float conversion) {
+        hashOps.put(userId, BALANCE, Float.parseFloat(hashOps.get(userId, BALANCE).toString()) * conversion);
+        for(String in : template.keys("in_")) {
+            hashOps.put(userId, in, Float.parseFloat(hashOps.get(userId, in).toString()) * conversion);
+        }
+        for(String out : template.keys("out_")) {
+            hashOps.put(userId, out, Float.parseFloat(hashOps.get(userId, out).toString()) * conversion);
+        }
+        String transactions = hashOps.get(userId, TRANSACTIONS).toString();
+        transactions += ",[%s] Converted currency from %s to %s".formatted(df.format(new Date()), hashOps.get(userId, DEF_CURR), toCurr);
+        hashOps.put(userId, TRANSACTIONS, transactions);
+    }
+
+    private String arrayToString(String[] arr, String delimiter) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < arr.length; i++) {
             if(i != arr.length-1) {
@@ -191,15 +211,14 @@ public class UserRepository {
         return sb.substring(0, sb.length()-1);
     }
 
-    public float convertCurrency(String from, String to) {
-        String url = UriComponentsBuilder.fromUriString(CURR_URL)
+    private float convertCurrency(String from, String to) {
+        String url = UriComponentsBuilder.fromUriString(CONVERT_URL)
             .queryParam("apikey", CURR_APIKEY)
-            .queryParam("base_currency", from)
             .queryParam("currencies", to)
+            .queryParam("base_currency", from)
             .toUriString();
         
         RequestEntity<Void> req = RequestEntity.get(url)
-            .accept(MediaType.APPLICATION_JSON)
             .build();
 
         RestTemplate restTemplate = new RestTemplate();
@@ -207,6 +226,7 @@ public class UserRepository {
         String payload = resp.getBody();
 
         JsonReader reader = Json.createReader(new StringReader(payload));
+        logger.info("[Repo] Payload from currency conversion: " + payload);
         float conversion = Float.parseFloat(reader.readObject()
             .getJsonObject("data")
             .getJsonNumber(to)
