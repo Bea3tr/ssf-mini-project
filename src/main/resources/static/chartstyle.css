@@ -1,0 +1,183 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    color: #333;
+    font-size: 20px;
+}
+
+img {
+    height: 50px;
+    padding: 1px;
+}
+
+.dropdown {
+    text-align: center;
+    width: 15%;
+    background-color: #bdf5f5;
+    border: solid #bdf5f5;
+}
+
+.dropdown:hover .drop-content {
+    display: block;
+}
+
+.drop-button {
+    background-color: #bdf5f5;
+    padding: 16px;
+    border: none;
+    cursor: pointer;
+}
+
+.drop-content {
+    text-align: center;
+    font-size: 75%;
+    display: none;
+    position: absolute;
+    background-color: white;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.drop-content a {
+    color: black;
+    display: block;
+    padding: 10px 12px;
+    text-decoration: none;
+}
+
+.drop-content a:hover {
+    background-color: #f1f1f1;
+
+}
+
+.top-table {
+    position: relative;
+    width: 100%;
+    margin-bottom: 0px;
+    background-color: white;
+    border-collapse: collapse;
+    font-size: 100%;
+}
+
+.logo-column {
+    display: inline-grid;
+    grid-template-columns: auto auto;
+}
+
+.logo-name {
+    font-weight: bold;
+    display: inline-grid;
+    grid-template-columns: auto auto;
+}
+
+.login-column {
+    text-align: center;
+    background-color: gold;
+    border: solid gold;
+    width: 15%;
+}
+
+.login-column:hover {
+    background-color: goldenrod;
+    border: solid goldenrod;
+}
+
+.no-underline {
+    text-decoration: none;
+    color: black;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+.header {
+    background-color: #006994;
+    padding: 15px;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+}
+
+.header span {
+    padding: 10px;
+}
+
+.logout {
+    border: none;
+    background: none;
+    font-weight: 500;
+    font-size: 100%;
+}
+
+.track-header {
+    padding: 5px;
+    text-align: center;
+    font-size: 150%;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.track-header h6 {
+    padding: 5px 20px;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
+.green {
+    background-color: rgba(71, 205, 71, 0.596);
+}
+
+.gold {
+    background-color: rgba(255, 217, 0, 0.653);
+}
+
+.red {
+    background-color: rgba(255, 0, 0, 0.42);
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+.card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+.card h2 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+}
+.chart {
+    height: 200px;
+    background: #e9ecef;
+    border-radius: 10px;
+    border: solid goldenrod;
+}
+.transactions {
+    margin-top: 20px;
+}
+.transactions ul {
+    list-style: none;
+    padding: 0;
+}
+.transactions li {
+    text-align: left;
+    padding: 10px 0;
+    border-bottom: 1px solid #006994;
+}
+.transactions li:last-child {
+    border-bottom: none;
+}

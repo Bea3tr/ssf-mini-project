@@ -109,8 +109,8 @@ public class UserService {
     }
 
     // IN vs OUT, daily cashflow over a month, type of transactions (IN & OUT)
-    public List<String> getDefaultCharts(User user) {
-        List<String> imgUrls = new LinkedList<>();
+    public Map<String, String> getDefaultCharts(User user) {
+        Map<String, String> imgUrls = new HashMap<>();
         
         // IN vs OUT
         Set<String> labels = new HashSet<>(){{
@@ -122,9 +122,9 @@ public class UserService {
             add(user.getOut());
         }};
         logger.info("IN: " + user.getIn() + " OUT: " + user.getOut());
-        JsonObject param = chartObj("doughnut", labels, data, "IN vs OUT");
+        JsonObject param = chartObj("doughnut", labels, data);
         logger.info("IN vs OUT: " + param.toString());
-        imgUrls.add(getUrl(param));
+        imgUrls.put("CASHFLOW", getUrl(param));
 
         // Daily cashflow
         String[] transactions = user.getTransactions();
@@ -146,8 +146,8 @@ public class UserService {
             }
         }
         JsonObject param2 = chartObj("bar", cashMap.keySet(), 
-            cashMap.values().stream().toList(), "Daily Cashflow");
-        imgUrls.add(getUrl(param2));
+            cashMap.values().stream().toList());
+        imgUrls.put("Daily Trends", getUrl(param2));
 
         // All transaction type
         JsonObject userObj = userRepo.dbToJson(user.getUserId());
@@ -158,8 +158,8 @@ public class UserService {
             }
         }
         JsonObject param3 = chartObj("doughnut", transType.keySet(), 
-            transType.values().stream().toList(), "Transaction Categories");
-        imgUrls.add(getUrl(param3));
+            transType.values().stream().toList());
+        imgUrls.put("Spending Categories", getUrl(param3));
         return imgUrls;
     }
 
@@ -169,14 +169,7 @@ public class UserService {
                 .toUriString();
     }
 
-    private JsonObject chartObj(String type, Set<String> labels, List<Float> data, String title) {
-        JsonObject options = Json.createObjectBuilder()
-            .add("title", Json.createObjectBuilder()
-                .add("display", true)
-                .add("text", title)
-                .build())
-            .build();
-
+    private JsonObject chartObj(String type, Set<String> labels, List<Float> data) {
         JsonObject dataObj = Json.createObjectBuilder()
             .add("datasets", Json.createArrayBuilder()
                 .add(Json.createObjectBuilder()
@@ -190,7 +183,6 @@ public class UserService {
         return Json.createObjectBuilder()
             .add("type", type)
             .add("data", dataObj)
-            .add("options", options)
             .build(); 
     }
 

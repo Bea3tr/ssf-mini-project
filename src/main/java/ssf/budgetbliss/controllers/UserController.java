@@ -2,6 +2,7 @@ package ssf.budgetbliss.controllers;
 
 import static ssf.budgetbliss.models.Constants.*;
 
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -218,6 +219,7 @@ public class UserController {
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
         mav.addObject("imgList", userSvc.getDefaultCharts(user));
+        mav.addObject("transactions", Arrays.copyOfRange(user.getTransactions(), 0, 5));
 
         return mav;
     }
