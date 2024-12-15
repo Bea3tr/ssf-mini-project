@@ -1,7 +1,9 @@
 body {
-    background-color: white;
-    margin: 0px;
-    font-family: "Nunito", sans-serif;
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    color: #333;
     font-size: 20px;
 }
 
@@ -66,7 +68,7 @@ img {
 
 .logo-name {
     font-weight: bold;
-    font-family: "Montserrat", sans-serif;
+    font-family: 'Poppins', sans-serif;
     display: inline-grid;
     grid-template-columns: auto auto;
 }
@@ -136,12 +138,12 @@ img {
 
 .log-form td {
     padding: 15px 10px;
-    font-family: "Montserrat", sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: bold;
 }
 
 input, select {
-    font-family: "Montserrat", sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: bold;
     padding: 5px 2px;
     font-size: 16px;
@@ -174,9 +176,68 @@ input {
 }
 
 .track-header {
-    padding: 15px;
+    padding: 5px;
     text-align: center;
+    font-size: 150%;
     font-weight: bold;
+    display: flex;
+    justify-content: space-evenly;
+}
+.track-header h6 {
+    padding: 5px 20px;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+.green {
+    background-color: rgba(71, 205, 71, 0.596);
+}
+.gold {
+    background-color: rgba(255, 217, 0, 0.653);
+}
+.red {
+    background-color: rgba(255, 0, 0, 0.42);
+}
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+.card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+.card h2 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+}
+.chart {
+    height: 200px;
+    background: #e9ecef;
+    border-radius: 10px;
+    border: solid goldenrod;
+}
+.transactions {
+    margin-top: 20px;
+}
+.transactions ul {
+    list-style: none;
+    padding: 0;
+}
+.transactions li {
+    text-align: left;
+    padding: 10px 0;
+    border-bottom: 1px solid #006994;
+}
+.transactions li:last-child {
+    border-bottom: none;
 }
 
 .button-row {
@@ -185,7 +246,7 @@ input {
 
 button {
     padding: 5px 10px;
-    font-family: "Montserrat", sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: bold;
     font-size: 16px;
 }
@@ -195,19 +256,9 @@ button {
     background: none;
     font-weight: 500;
     font-size: 100%;
-    font-family: "Nunito", sans-serif;
+    font-family: 'Poppins', sans-serif;
 }
 
 .right {
     text-align: right;
-}
-
-.chart {
-    height: 300px;
-    width: auto;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    border-radius: 20px;
-    border: solid  #006994;
 }

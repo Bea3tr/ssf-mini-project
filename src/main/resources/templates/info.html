@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/appstyle.css">
     <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
-    <title>Home</title>
+    <title>Information</title>
 </head>
 <body data-th-object="${user}">
 
@@ -35,24 +35,9 @@
     </table>
 
     <div class="header">
-        <span>Balance: $<span class="underline" data-th-text="*{balance}"></span></span>
-        <span>IN: $<span class="underline" data-th-text="*{in}"></span></span>
-        <span>OUT: $<span class="underline" data-th-text="*{out}"></span></span>
+        <span>User Information</span>
     </div>
 
-    <br>
-
-    <div>
-        <div class="logs">
-            <a class="no-underline" data-th-href="@{/{userId}/logs(userId=*{userId})}"><span>LOGS</span></a>
-        </div>
-        <div class="track">
-            <a class="no-underline" data-th-href="@{/{userId}/track(userId=*{userId})}"><span>TRACK</span></a>
-        </div>
-        <div class="info">
-            <a class="no-underline" data-th-href="@{/{userId}/info(userId=*{userId})}"><span>INFORMATION</span></a>
-        </div>
-    </div>
 
 </body>
 </html>
