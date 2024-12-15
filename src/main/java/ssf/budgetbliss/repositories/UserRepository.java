@@ -25,6 +25,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 import ssf.budgetbliss.models.User;
 
@@ -58,6 +60,17 @@ public class UserRepository {
                          in, out, userDetails.get(TRANSACTIONS).toString().split(","));
 
         return user;
+    }
+
+    public JsonObject dbToJson(String userId) {
+        HashOperations<String, String, Object> hashOps = template.opsForHash();
+        logger.info("[Repo] Retrieving user information from database - to Json");
+        Map<String, Object> userDetails = hashOps.entries(userId);
+        JsonObjectBuilder userObj = Json.createObjectBuilder();
+        for(String key : userDetails.keySet()) {
+            userObj.add(key, userDetails.get(key).toString());
+        }
+        return userObj.build();
     }
 
     // hset userId password password
@@ -119,7 +132,7 @@ public class UserRepository {
         } 
         String transactions = hashOps.get(userId, TRANSACTIONS).toString();
 
-        if(cashflow.equals("IN"))
+        if(cashflow.equals(IN))
             balance += amt;
         else 
             balance -= amt;

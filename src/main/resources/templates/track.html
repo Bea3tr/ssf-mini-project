@@ -12,7 +12,9 @@
 
     <table class="top-table">
         <tr>
-            <td class="logo-column"><img src="/image/new_logo.png"></td>
+            <td class="logo-column">
+                <a href="/home"><img src="/image/new_logo.png"></a>
+            </td>
             <td class="logo-name">
                 BudgetBliss
             </td>
@@ -41,6 +43,11 @@
         <span>Balance: $<span class="underline" data-th-text="*{balance}"></span></span>
         <span>IN: $<span class="underline" data-th-text="*{in}"></span></span>
         <span>OUT: $<span class="underline" data-th-text="*{out}"></span></span>
+    </div>
+
+    <div data-th-each="img:${imgList}">
+        <img class="chart" data-th-src="${img}">
+        <br>
     </div>
     
 </body>

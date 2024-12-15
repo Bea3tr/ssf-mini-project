@@ -201,3 +201,13 @@ button {
 .right {
     text-align: right;
 }
+
+.chart {
+    height: 300px;
+    width: auto;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 20px;
+    border: solid  #006994;
+}

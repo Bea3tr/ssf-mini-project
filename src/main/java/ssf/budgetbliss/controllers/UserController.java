@@ -199,7 +199,7 @@ public class UserController {
         return "logs";
     }
 
-    @GetMapping("/{userid}/track") 
+    @GetMapping("/{userId}/track") 
     public ModelAndView getUserTrack(
         @PathVariable String userId,
         HttpSession sess) {
@@ -217,11 +217,12 @@ public class UserController {
         mav.setViewName("track");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
+        mav.addObject("imgList", userSvc.getDefaultCharts(user));
 
         return mav;
     }
 
-    @GetMapping("/{userid}/info") 
+    @GetMapping("/{userId}/info") 
     public ModelAndView getUserInfo(
         @PathVariable String userId,
         HttpSession sess) {
