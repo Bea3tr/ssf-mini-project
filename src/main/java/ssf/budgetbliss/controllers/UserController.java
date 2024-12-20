@@ -3,6 +3,8 @@ package ssf.budgetbliss.controllers;
 import static ssf.budgetbliss.models.Constants.*;
 
 import java.util.logging.Logger;
+import java.text.ParseException;
+import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
@@ -65,6 +67,7 @@ public class UserController {
         mav.setViewName("change-details");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", new ValidUser());
+        mav.addObject("currList", userSvc.currencyList());
         return mav;
     }
 
@@ -72,6 +75,7 @@ public class UserController {
     public ModelAndView postDetails(
         @Valid @ModelAttribute("user") ValidUser user,
         BindingResult bindings,
+        @RequestBody MultiValueMap<String, String> form,
         HttpSession sess) {
 
         String id = (String) sess.getAttribute(USERID);
@@ -91,6 +95,7 @@ public class UserController {
             return mav;
         }
         userSvc.changePassword(id, user.getPassword(), user.getConfirmPassword());
+        userSvc.updateCurr(id, form.getFirst("defCurr"));
         if(!id.equals(user.getUserId()))
             userSvc.changeUserId(id, user.getUserId());
 
@@ -176,6 +181,7 @@ public class UserController {
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
         mav.addObject("currList", userSvc.currencyList());
+        mav.addObject("defCurr", user.getDefCurr());
 
         return mav;
     }
@@ -191,11 +197,20 @@ public class UserController {
         String transType = form.getFirst("transtype");
         String currency = form.getFirst("currency");
         float amt = Float.parseFloat(form.getFirst("amt"));
-        userSvc.updateBal(userId, currency, cashflow, transType, amt);
+        Date date = new Date();
+        try {
+            date = DF.parse(form.getFirst("date"));
+        } catch (ParseException ex) {
+            logger.info("[User Controller] Error parsing date input");
+            ex.printStackTrace();
+        }
+        
+        userSvc.updateBal(userId, currency, cashflow, transType, amt, date);
 
         User user = userSvc.getUserById(userId);
         model.addAttribute("user", user);
         model.addAttribute("currList", userSvc.currencyList());
+        model.addAttribute("defCurr", user.getDefCurr());
         return "logs";
     }
 

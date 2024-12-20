@@ -72,6 +72,7 @@ public class SignUpController {
             userId = user.getUserId();
             sess.setAttribute(USERID, userId);
         }
+        logger.info("[SignUp Controller] Currency: " + form.getFirst("defCurr"));
         userSvc.insertUser(userId, user.getPassword(), form.getFirst("defCurr"));
         logger.info("[SignUp Controller] Sign up successful");
         Optional<User> opt = userSvc.getUser(user.getUserId(), user.getPassword());

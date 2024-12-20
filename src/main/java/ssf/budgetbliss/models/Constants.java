@@ -1,5 +1,6 @@
 package ssf.budgetbliss.models;
 
+import java.text.SimpleDateFormat;
 import java.util.Set;
 
 public class Constants {
@@ -11,6 +12,7 @@ public class Constants {
     public static final String USERID = "userId";
     public static final String IN = "in";
     public static final String OUT = "out";
+    public static SimpleDateFormat DF = new SimpleDateFormat("yyyy-MM-dd");
     
     public static final String CURR_URL = "https://api.freecurrencyapi.com/v1/currencies";
     public static final String CONVERT_URL = "https://api.freecurrencyapi.com/v1/latest";
@@ -22,6 +24,10 @@ public class Constants {
 
     public static String TRANSACTION_ID(String userId) {
         return userId + "_transactions";
+    }
+
+    public static float ROUND_AMT(float amt) {
+        return Math.round(amt * 100) / 100;
     }
    
 }

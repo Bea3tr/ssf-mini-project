@@ -131,28 +131,37 @@ img {
 .info {
     background-color: #006a944c;
 }
-
-.log-form {
+.log-table {
     margin: auto;
+    width: 90%;
 }
 
-.log-form td {
-    padding: 15px 10px;
-    font-family: 'Poppins', sans-serif;
+.log-table td {
+    text-align: left;
+}
+
+label {
+    margin-bottom: 5px;
     font-weight: bold;
 }
 
 input, select {
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.full {
+    width: 95%;
+}
+
+label {
     font-family: 'Poppins', sans-serif;
     font-weight: bold;
     padding: 5px 2px;
     font-size: 16px;
-}
-
-input {
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid black;
 }
 
 .trans {
@@ -163,7 +172,8 @@ input {
     margin: auto;
     padding: 5px 15px;
     font-size: 16px;
-    /* background-color: #006a9441; */
+    width: 100%;
+    background-color: #006a9441;
 }
 
 .snd-header {
@@ -172,7 +182,8 @@ input {
     color: black;
     text-align: center;
     font-weight: bold;
-    margin-top: 0px;
+    margin: 0px;
+    width: 100%;
 }
 
 .track-header {
@@ -202,6 +213,17 @@ input {
     max-width: 1200px;
     margin: 20px auto;
 }
+
+.log-container {
+    width: 90%;
+    max-width: 800px;
+    margin: 20px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 
 .grid {
     display: grid;
@@ -234,21 +256,21 @@ input {
 .transactions li {
     text-align: left;
     padding: 10px 0;
-    border-bottom: 1px solid #006994;
+    border-bottom: 1px dotted #006994;
 }
 .transactions li:last-child {
     border-bottom: none;
 }
 
-.button-row {
-    text-align: right;
-}
-
 button {
-    padding: 5px 10px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: bold;
+    background-color: #006994;
+    color: white;
+    border: none;
+    padding: 10px;
     font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%
 }
 
 .logout {
@@ -259,6 +281,25 @@ button {
     font-family: 'Poppins', sans-serif;
 }
 
-.right {
-    text-align: right;
+.flex-trans {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
+
+.flex-trans .trans-content {
+    margin-top: 15px;
+    padding: 2px 10px;
+    text-align: left;
+    border-bottom: 1px dotted #006994;
+}
+
+.trans-header {
+    background-color: goldenrod;
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: bold;
+    text-align: center;
+}
+

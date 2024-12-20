@@ -1,6 +1,7 @@
 package ssf.budgetbliss.services;
 
 import java.io.StringReader;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -57,8 +58,8 @@ public class UserService {
         return userRepo.userExists(userId);
     }
 
-    public void updateBal(String userId, String fromCurr, String cashflow, String trans_type, float amt) {
-        userRepo.updateBal(userId, fromCurr, cashflow, trans_type, amt);
+    public void updateBal(String userId, String fromCurr, String cashflow, String trans_type, float amt, Date date) {
+        userRepo.updateBal(userId, fromCurr, cashflow, trans_type, amt, date);
     }
 
     public void changeUserId(String userId, String newId) {
@@ -71,6 +72,10 @@ public class UserService {
 
     public void deleteUser(String userId) {
         userRepo.deleteUser(userId);
+    }
+
+    public void updateCurr(String userId, String toCurr) {
+        userRepo.updateCurr(userId, toCurr);
     }
 
     public Set<String> currencyList() {
