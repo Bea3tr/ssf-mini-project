@@ -41,8 +41,8 @@ public class UserService {
     @Autowired
     private UserRepository userRepo;
 
-    public void insertUser(String userId, String password) {
-        userRepo.insertUser(userId, password);
+    public void insertUser(String userId, String password, String defCurr) {
+        userRepo.insertUser(userId, password, defCurr);
     }
 
     public Optional<User> getUser(String userId, String password) {
@@ -127,7 +127,7 @@ public class UserService {
         imgUrls.put("CASHFLOW", getUrl(param));
 
         // Daily cashflow
-        String[] transactions = user.getTransactions();
+        List<String> transactions = user.getTransactions();
         Map<String, Float> cashMap = new HashMap<>();
         for(String trans : transactions) {
             if(!trans.contains(":"))

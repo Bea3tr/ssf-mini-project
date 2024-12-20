@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
@@ -42,10 +43,13 @@ public class UserRepository {
     @Value("${curr.apikey}")
     private String CURR_APIKEY;
 
-    @Autowired @Qualifier("redis-0")
-    private RedisTemplate<String, Object> template;
+    @Autowired @Qualifier("redis-obj")
+    private RedisTemplate<String, Object> templateObj;
 
-    private User dbToUser(HashOperations<String, String, Object> hashOps, String userId) {
+    @Autowired @Qualifier("redis-string")
+    private RedisTemplate<String, String> template;
+
+    private User dbToUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId) {
         logger.info("[Repo] Retrieving user information from database");
         Map<String, Object> userDetails = hashOps.entries(userId);
         float in = 0f;
@@ -56,9 +60,10 @@ public class UserRepository {
             else if (hashkey.contains("out_"))
                 out += Float.parseFloat(userDetails.get(hashkey).toString());
         }
+        // User user = new User(userId, userDetails.get(PASSWORD).toString(), userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
+        //                  in, out, userDetails.get(TRANSACTIONS).toString().split(","));
         User user = new User(userId, userDetails.get(PASSWORD).toString(), userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
-                         in, out, userDetails.get(TRANSACTIONS).toString().split(","));
-
+                         in, out, listOps.range(TRANSACTION_ID(userId), 0, -1));
         return user;
     }
 
@@ -74,17 +79,18 @@ public class UserRepository {
     }
 
     // hset userId password password
-    public void insertUser(String userId, String password) {
+    public void insertUser(String userId, String password, String defCurr) {
         logger.info("[Repo] Inserting new user: " + userId);
 
         HashOperations<String, String, Object> hashOps = template.opsForHash();
+        ListOperations<String, String> listOps = template.opsForList();
         Map<String, Object> values = new HashMap<>();
         values.put(PASSWORD, password);
         values.put(BALANCE, 0f);
-        values.put(DEF_CURR, "SGD");
-        values.put(TRANSACTIONS, "[%s] Created %s".formatted(df.format(new Date()), userId));
-        
+        values.put(DEF_CURR, defCurr);
+        // values.put(TRANSACTIONS, "[%s] Created %s".formatted(df.format(new Date()), userId));
         hashOps.putAll(userId, values);
+        listOps.leftPush(TRANSACTION_ID(userId), "[%s] Created %s".formatted(df.format(new Date()), userId));
     }
 
     public boolean userExists(String userId) {
@@ -103,14 +109,13 @@ public class UserRepository {
         }
 
         logger.info("[Repo] Getting user: " + userId);
-        user = dbToUser(hashOps, userId);
+        user = dbToUser(hashOps, template.opsForList(), userId);
 
         return Optional.of(user);
     }
 
     public User getUserById(String userId) {
-        HashOperations<String, String, Object> hashOps = template.opsForHash();
-        User user = dbToUser(hashOps, userId);
+        User user = dbToUser(template.opsForHash(), template.opsForList(), userId);
         return user;
     }
 
@@ -130,7 +135,7 @@ public class UserRepository {
         if(hashOps.hasKey(userId, cashflow + "_" + trans_type)) {
             catBal = Float.parseFloat(hashOps.get(userId, cashflow + "_" + trans_type).toString());
         } 
-        String transactions = hashOps.get(userId, TRANSACTIONS).toString();
+        // String transactions = hashOps.get(userId, TRANSACTIONS).toString();
 
         if(cashflow.equals(IN))
             balance += amt;
@@ -138,17 +143,19 @@ public class UserRepository {
             balance -= amt;
 
         catBal += amt;
-        transactions += ",[%s] [%s] %s: %s %.2f".formatted(df.format(new Date()), cashflow.toUpperCase(), 
-            trans_type.toUpperCase(), toCurr, amt);
+        // transactions += ",[%s] [%s] %s: %s %.2f".formatted(df.format(new Date()), cashflow.toUpperCase(), 
+            // trans_type.toUpperCase(), toCurr, amt);
         hashOps.put(userId, BALANCE, balance);
         hashOps.put(userId, cashflow + "_" + trans_type, catBal);
-        hashOps.put(userId, TRANSACTIONS, transactions);
+        // hashOps.put(userId, TRANSACTIONS, transactions);
+        template.opsForList().leftPush(TRANSACTION_ID(userId), "[%s] [%s] %s: %s %.2f".formatted(df.format(new Date()), cashflow.toUpperCase(), 
+            trans_type.toUpperCase(), toCurr, amt));
     }
 
     public void changeUserId(String userId, String newId) { 
-        User user = dbToUser(template.opsForHash(), userId);
+        User user = dbToUser(template.opsForHash(), template.opsForList(), userId);
         template.delete(userId);
-        updateUser(template.opsForHash(), newId, user);
+        updateUser(template.opsForHash(), template.opsForList(), newId, user);
     }
 
     public boolean changePassword(String userId, String password, String newPassword) {
@@ -169,12 +176,15 @@ public class UserRepository {
     }
 
     public Set<String> getCurrency() {
-        if(template.hasKey("currencyList"))
+        if(template.hasKey("currencyList")) {
+            logger.info("[Repo] Retrieving currency list from database");
             return Stream.of(template.opsForValue().get("currencyList")
-                            .toString()
-                            .trim()
-                            .split(","))
-                            .collect(Collectors.toSet());
+            .toString()
+            .trim()
+            .split(","))
+            .collect(Collectors.toSet());
+        }
+        logger.info("[Repo] Retrieving currency list from api");
         return new HashSet<>();
     }
 
@@ -187,7 +197,7 @@ public class UserRepository {
         template.expire("currencyList", 30, TimeUnit.DAYS);
     }
 
-    private void updateUser(HashOperations<String, String, Object> hashOps, String userId, User user) {
+    private void updateUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId, User user) {
         Map<String, Object> values = new HashMap<>();
         values.put(USERID, user.getUserId());
         values.put(PASSWORD, user.getPassword());
@@ -195,8 +205,10 @@ public class UserRepository {
         values.put(BALANCE, user.getBalance());
         values.put(IN, user.getIn());
         values.put(OUT, user.getOut());
-        values.put(TRANSACTIONS, arrayToString(user.getTransactions(), ","));
         hashOps.putAll(userId, values);
+        for (String trans : user.getTransactions()) {
+            listOps.rightPush(TRANSACTION_ID(userId), trans);
+        }
     }
 
     private void updateCurr(HashOperations<String, String, Object> hashOps, String userId, String toCurr, float conversion) {
@@ -207,22 +219,23 @@ public class UserRepository {
         for(String out : template.keys("out_")) {
             hashOps.put(userId, out, Float.parseFloat(hashOps.get(userId, out).toString()) * conversion);
         }
-        String transactions = hashOps.get(userId, TRANSACTIONS).toString();
-        transactions += ",[%s] Converted currency from %s to %s".formatted(df.format(new Date()), hashOps.get(userId, DEF_CURR), toCurr);
-        hashOps.put(userId, TRANSACTIONS, transactions);
+        // String transactions = hashOps.get(userId, TRANSACTIONS).toString();
+        // transactions += ",[%s] Converted currency from %s to %s".formatted(df.format(new Date()), hashOps.get(userId, DEF_CURR), toCurr);
+        // hashOps.put(userId, TRANSACTIONS, transactions);
+        template.opsForList().leftPush(TRANSACTION_ID(userId), "[%s] Converted currency from %s to %s".formatted(df.format(new Date()), hashOps.get(userId, DEF_CURR), toCurr));
     }
 
-    private String arrayToString(String[] arr, String delimiter) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < arr.length; i++) {
-            if(i != arr.length-1) {
-                sb.append(arr[i]).append(delimiter);
-            } else {
-                sb.append(arr[i]);
-            }
-        }
-        return sb.substring(0, sb.length()-1);
-    }
+    // private String arrayToString(String[] arr, String delimiter) {
+    //     StringBuilder sb = new StringBuilder();
+    //     for (int i = 0; i < arr.length; i++) {
+    //         if(i != arr.length-1) {
+    //             sb.append(arr[i]).append(delimiter);
+    //         } else {
+    //             sb.append(arr[i]);
+    //         }
+    //     }
+    //     return sb.substring(0, sb.length()-1);
+    // }
 
     private float convertCurrency(String from, String to) {
         String url = UriComponentsBuilder.fromUriString(CONVERT_URL)

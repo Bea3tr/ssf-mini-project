@@ -31,8 +31,7 @@ public class AppConfig {
     @Value("${spring.data.redis.password}")
     private String redisPassword;
 
-    @Bean("redis-0")
-    public RedisTemplate<String, Object> createRedisTemplate() {
+    private JedisConnectionFactory createJedisFac() {
         
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
         config.setDatabase(redisDatabase);
@@ -46,8 +45,25 @@ public class AppConfig {
         JedisConnectionFactory jedisFac = new JedisConnectionFactory(config, jedisClient);
         jedisFac.afterPropertiesSet();
 
+        return jedisFac;
+    }
+
+    @Bean("redis-obj")
+    public RedisTemplate<String, Object> createRedisTemplateObj() {
+
         RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(jedisFac);
+        template.setConnectionFactory(createJedisFac());
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+
+        return template;
+    }
+
+    @Bean("redis-string")
+    public RedisTemplate<String, String> createRedisTemplate() {
+
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+        template.setConnectionFactory(createJedisFac());
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
 

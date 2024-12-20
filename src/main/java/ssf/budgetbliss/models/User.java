@@ -1,5 +1,7 @@
 package ssf.budgetbliss.models;
 
+import java.util.List;
+
 public class User {
 
     private String userId;
@@ -10,7 +12,7 @@ public class User {
     private float in;
     private float out;
     
-    private String[] transactions;
+    private List<String> transactions;
 
     public String getUserId() {return userId;}
     public void setUserId(String userId) {this.userId = userId;}
@@ -30,12 +32,12 @@ public class User {
     public float getOut() {return out;}
     public void setOut(float out) {this.out = out;}
     
-    public String[] getTransactions() {return transactions;}
-    public void setTransactions(String[] transactions) {this.transactions = transactions;}
+    public List<String> getTransactions() {return transactions;}
+    public void setTransactions(List<String> transactions) {this.transactions = transactions;}
     
     public User() {}
     public User(String userId, String password, String defCurr, float balance, float in, float out,
-            String[] transactions) {
+            List<String> transactions) {
         this.userId = userId;
         this.password = password;
         this.defCurr = defCurr;
