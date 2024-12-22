@@ -46,6 +46,10 @@ public class UserService {
         userRepo.insertUser(userId, password, defCurr);
     }
 
+    public void insertUserTrip(String userId, String curr) {
+        userRepo.insertUserTrip(userId, curr);
+    }
+
     public Optional<User> getUser(String userId, String password) {
         return userRepo.getUser(userId, password);
     }
@@ -72,6 +76,10 @@ public class UserService {
 
     public void deleteUser(String userId) {
         userRepo.deleteUser(userId);
+    }
+
+    public void deleteTransaction(String userId, String transaction) {
+        userRepo.deleteTransaction(userId, transaction);
     }
 
     public void updateCurr(String userId, String toCurr) {

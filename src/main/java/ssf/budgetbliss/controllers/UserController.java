@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import jakarta.servlet.http.HttpSession;
@@ -30,7 +31,7 @@ import ssf.budgetbliss.services.UserService;
 @Controller
 @RequestMapping
 public class UserController {
-    
+
     private static final Logger logger = Logger.getLogger(UserController.class.getName());
 
     @Autowired
@@ -41,7 +42,7 @@ public class UserController {
     public String getHome(Model model, HttpSession sess) {
         String id = (String) sess.getAttribute(USERID);
         logger.info("[User Controller] In session: " + id);
-        if(id == null) {
+        if (id == null) {
             logger.info("[User Controller] Directing to /home");
             return "index";
         }
@@ -52,12 +53,12 @@ public class UserController {
 
     @GetMapping("/{userId}/changedetails")
     public ModelAndView changePassword(
-        @PathVariable String userId,
-        HttpSession sess) {
+            @PathVariable String userId,
+            HttpSession sess) {
 
         ModelAndView mav = new ModelAndView();
-        
-        if(!userSvc.isAuth(sess, userId)) {
+
+        if (!userSvc.isAuth(sess, userId)) {
             logger.info("[User Controller] Unauthenticated access");
             mav.setViewName("not-login");
             mav.setStatus(HttpStatusCode.valueOf(401));
@@ -73,20 +74,20 @@ public class UserController {
 
     @PostMapping("/changedetails")
     public ModelAndView postDetails(
-        @Valid @ModelAttribute("user") ValidUser user,
-        BindingResult bindings,
-        @RequestBody MultiValueMap<String, String> form,
-        HttpSession sess) {
+            @Valid @ModelAttribute("user") ValidUser user,
+            BindingResult bindings,
+            @RequestBody MultiValueMap<String, String> form,
+            HttpSession sess) {
 
         String id = (String) sess.getAttribute(USERID);
 
         ModelAndView mav = new ModelAndView();
-        if(bindings.hasErrors()) {
+        if (bindings.hasErrors()) {
             mav.setViewName("change-details");
             mav.setStatus(HttpStatusCode.valueOf(400));
             return mav;
 
-        } else if(!userSvc.changePassword(id, user.getPassword(), user.getConfirmPassword())) {
+        } else if (!userSvc.changePassword(id, user.getPassword(), user.getConfirmPassword())) {
             logger.info("[User Controller] Password change unsuccessful");
             FieldError err = new FieldError("user", "password", "Incorrect password");
             bindings.addError(err);
@@ -96,7 +97,7 @@ public class UserController {
         }
         userSvc.changePassword(id, user.getPassword(), user.getConfirmPassword());
         userSvc.updateCurr(id, form.getFirst("defCurr"));
-        if(!id.equals(user.getUserId()))
+        if (!id.equals(user.getUserId()))
             userSvc.changeUserId(id, user.getUserId());
 
         mav.setViewName("successful-change");
@@ -106,12 +107,12 @@ public class UserController {
 
     @GetMapping("/{userId}/delete")
     public ModelAndView deleteUser(
-        @PathVariable String userId,
-        HttpSession sess) {
+            @PathVariable String userId,
+            HttpSession sess) {
 
         ModelAndView mav = new ModelAndView();
-        
-        if(!userSvc.isAuth(sess, userId)) {
+
+        if (!userSvc.isAuth(sess, userId)) {
             logger.info("[User Controller] Unauthenticated access");
             mav.setViewName("not-login");
             mav.setStatus(HttpStatusCode.valueOf(401));
@@ -126,20 +127,20 @@ public class UserController {
 
     @PostMapping("/delete")
     public ModelAndView postDelete(
-        @Valid @ModelAttribute("user") ValidUser user,
-        BindingResult bindings,
-        HttpSession sess) {
+            @Valid @ModelAttribute("user") ValidUser user,
+            BindingResult bindings,
+            HttpSession sess) {
 
         String id = (String) sess.getAttribute(USERID);
         User currUser = userSvc.getUserById(id);
 
         ModelAndView mav = new ModelAndView();
-        if(bindings.hasErrors()) {
+        if (bindings.hasErrors()) {
             mav.setViewName("delete");
             mav.setStatus(HttpStatusCode.valueOf(400));
             return mav;
 
-        } else if(!user.getUserId().equals(id)) {
+        } else if (!user.getUserId().equals(id)) {
             logger.info("[User Controller] Incorrect user id");
             FieldError err = new FieldError("user", "user", "Incorrect user ID");
             bindings.addError(err);
@@ -162,14 +163,14 @@ public class UserController {
         return mav;
     }
 
-    @GetMapping("/{userId}/logs") 
+    @GetMapping("/{userId}/logs")
     public ModelAndView getUserLogs(
-        @PathVariable String userId,
-        HttpSession sess) {
-        
+            @PathVariable String userId,
+            HttpSession sess) {
+
         ModelAndView mav = new ModelAndView();
 
-        if(!userSvc.isAuth(sess, userId)) {
+        if (!userSvc.isAuth(sess, userId)) {
             logger.info("[User Controller] Unauthenticated access");
             mav.setViewName("not-login");
             mav.setStatus(HttpStatusCode.valueOf(401));
@@ -188,10 +189,10 @@ public class UserController {
 
     @PostMapping("/logs")
     public String postLogs(Model model,
-        @RequestBody MultiValueMap<String, String> form,
-        HttpSession sess) {
-        
-        String userId = (String)sess.getAttribute(USERID);
+            @RequestBody MultiValueMap<String, String> form,
+            HttpSession sess) {
+
+        String userId = (String) sess.getAttribute(USERID);
 
         String cashflow = form.getFirst("cashflow");
         String transType = form.getFirst("transtype");
@@ -204,7 +205,7 @@ public class UserController {
             logger.info("[User Controller] Error parsing date input");
             ex.printStackTrace();
         }
-        
+
         userSvc.updateBal(userId, currency, cashflow, transType, amt, date);
 
         User user = userSvc.getUserById(userId);
@@ -214,14 +215,89 @@ public class UserController {
         return "logs";
     }
 
-    @GetMapping("/{userId}/track") 
-    public ModelAndView getUserTrack(
-        @PathVariable String userId,
-        HttpSession sess) {
-        
+    @GetMapping("/{userId}/travel")
+    public ModelAndView getTravel(
+            @PathVariable String userId,
+            @RequestParam String destCurr,
+            HttpSession sess) {
+
         ModelAndView mav = new ModelAndView();
 
-        if(!userSvc.isAuth(sess, userId)) {
+        if (!userSvc.isAuth(sess, userId)) {
+            logger.info("[User Controller] Unauthenticated access");
+            mav.setViewName("not-login");
+            mav.setStatus(HttpStatusCode.valueOf(401));
+            return mav;
+        }
+        logger.info("[User Controller] Inserting currency details");
+        userSvc.insertUserTrip(userId, destCurr);
+        logger.info("[User Controller] Redirecting to travel logs");
+        User user = userSvc.getUserById(TRAVEL_ID(userId, destCurr));
+        mav.setViewName("travel");
+        mav.setStatus(HttpStatusCode.valueOf(200));
+        mav.addObject("user", user);
+        return mav;
+    }
+
+    @PostMapping("/travel")
+    public String postTravel(Model model,
+            @RequestBody MultiValueMap<String, String> form,
+            HttpSession sess) {
+
+        String userId = (String) sess.getAttribute(USERID);
+
+        String cashflow = form.getFirst("cashflow");
+        String transType = form.getFirst("transtype");
+        String currency = form.getFirst("currency");
+        float amt = Float.parseFloat(form.getFirst("amt"));
+        Date date = new Date();
+        try {
+            date = DF.parse(form.getFirst("date"));
+        } catch (ParseException ex) {
+            logger.info("[User Controller] Error parsing date input");
+            ex.printStackTrace();
+        }
+
+        userSvc.updateBal(userId, currency, cashflow, transType, amt, date);
+
+        User user = userSvc.getUserById(userId);
+        model.addAttribute("user", user);
+        model.addAttribute("currList", userSvc.currencyList());
+        model.addAttribute("defCurr", user.getDefCurr());
+        return "travel";
+    }
+
+    @GetMapping("/{userId}/edit")
+    public ModelAndView getEdit(@PathVariable String userId,
+            @RequestParam int index,
+            HttpSession sess) {
+
+        ModelAndView mav = new ModelAndView();
+
+        if (!userSvc.isAuth(sess, userId)) {
+            logger.info("[User Controller] Unauthenticated access");
+            mav.setViewName("not-login");
+            mav.setStatus(HttpStatusCode.valueOf(401));
+            return mav;
+        }
+        User user = userSvc.getUserById(userId);
+        mav.setViewName("edit");
+        mav.setStatus(HttpStatusCode.valueOf(200));
+        mav.addObject("user", user);
+        mav.addObject("currList", userSvc.currencyList());
+        mav.addObject("defCurr", user.getDefCurr());
+
+        return null;
+    }
+
+    @GetMapping("/{userId}/track")
+    public ModelAndView getUserTrack(
+            @PathVariable String userId,
+            HttpSession sess) {
+
+        ModelAndView mav = new ModelAndView();
+
+        if (!userSvc.isAuth(sess, userId)) {
             logger.info("[User Controller] Unauthenticated access");
             mav.setViewName("not-login");
             mav.setStatus(HttpStatusCode.valueOf(401));
@@ -238,14 +314,14 @@ public class UserController {
         return mav;
     }
 
-    @GetMapping("/{userId}/info") 
+    @GetMapping("/{userId}/info")
     public ModelAndView getUserInfo(
-        @PathVariable String userId,
-        HttpSession sess) {
-        
+            @PathVariable String userId,
+            HttpSession sess) {
+
         ModelAndView mav = new ModelAndView();
-     
-        if(!userSvc.isAuth(sess, userId)) {
+
+        if (!userSvc.isAuth(sess, userId)) {
             logger.info("[User Controller] Unauthenticated access");
             mav.setViewName("not-login");
             mav.setStatus(HttpStatusCode.valueOf(401));
@@ -260,5 +336,19 @@ public class UserController {
         return mav;
     }
 
-    
+    @PostMapping("/delete")
+    public String postDelete(Model model,
+        @RequestBody String trans,
+        HttpSession sess) {
+
+        String userId = (String) sess.getAttribute(USERID);
+        userSvc.deleteTransaction(userId, trans);
+
+        User user = userSvc.getUserById(userId);
+        model.addAttribute("user", user);
+        model.addAttribute("currList", userSvc.currencyList());
+        model.addAttribute("defCurr", user.getDefCurr());
+        return "logs";
+    }
+
 }

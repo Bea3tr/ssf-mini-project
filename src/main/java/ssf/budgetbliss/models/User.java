@@ -46,5 +46,15 @@ public class User {
         this.out = out;
         this.transactions = transactions;
     }  
+    public User(String userId, String defCurr, float balance, float in, float out,
+            List<String> transactions) {
+        this.userId = userId;
+        this.password = "";
+        this.defCurr = defCurr;
+        this.balance = balance;
+        this.in = in;
+        this.out = out;
+        this.transactions = transactions;
+    } 
     
 }

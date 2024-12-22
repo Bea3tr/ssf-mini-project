@@ -1,7 +1,7 @@
 body {
     background-color: #006994;
     margin: 0px;
-    font-family: "Nunito", sans-serif;
+    font-family: "Poppins", sans-serif;
 }
 
 /* style for top row */
@@ -35,17 +35,30 @@ img {
     text-align: center;
     background-color: gold;
     border: solid gold;
-    width: 15%;
+    width: 10%;
 }
-
 .login-column:hover {
     background-color: goldenrod;
     border: solid goldenrod;
 }
+.login-div, .signup-div {
+    font-size: 20px;
+}
+
+.signup-column {
+    text-align: center;
+    background-color: #bdf5f5;
+    border: solid #bdf5f5;
+    width: 10%;
+}
+.signup-column:hover {
+    background-color: #93c7c7;
+    border: solid #93c7c7;
+}
 
 .no-underline {
     text-decoration: none;
-    color: black;
+    color: #006994;
 }
 
 hr {

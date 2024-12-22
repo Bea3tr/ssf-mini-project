@@ -52,6 +52,7 @@ public class UserRepository {
     private User dbToUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId) {
         logger.info("[Repo] Retrieving user information from database");
         Map<String, Object> userDetails = hashOps.entries(userId);
+        User user = new User();
         float in = 0f;
         float out = 0f;
         for(String hashkey : userDetails.keySet()) {
@@ -60,10 +61,13 @@ public class UserRepository {
             else if (hashkey.contains("out_"))
                 out += Float.parseFloat(userDetails.get(hashkey).toString());
         }
-        // User user = new User(userId, userDetails.get(PASSWORD).toString(), userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
-        //                  in, out, userDetails.get(TRANSACTIONS).toString().split(","));
-        User user = new User(userId, userDetails.get(PASSWORD).toString(), userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
-                         in, out, listOps.range(TRANSACTION_ID(userId), 0, -1));
+        if(!userId.contains("_")) {
+            user = new User(userId, userDetails.get(PASSWORD).toString(), userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
+            in, out, listOps.range(TRANSACTION_ID(userId), 0, -1));
+        } else {
+            user = new User(userId, userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
+            in, out, listOps.range(TRANSACTION_ID(userId), 0, -1));
+        }
         return user;
     }
 
@@ -88,7 +92,6 @@ public class UserRepository {
         values.put(PASSWORD, password);
         values.put(BALANCE, 0f);
         values.put(DEF_CURR, defCurr);
-        // values.put(TRANSACTIONS, "[%s] Created %s".formatted(df.format(new Date()), userId));
         hashOps.putAll(userId, values);
         listOps.leftPush(TRANSACTION_ID(userId), "[%s] Created %s".formatted(DF.format(new Date()), userId));
     }
@@ -127,27 +130,20 @@ public class UserRepository {
             logger.info("[Repo] Updating currency from %s to %s".formatted(fromCurr, toCurr));
             float conversion = convertCurrency(fromCurr, toCurr);
             amt *= conversion;
-            // updateCurr(hashOps, userId, toCurr, conversion);
         }
-
         float balance = Float.parseFloat(hashOps.get(userId, BALANCE).toString());
         float catBal = 0f;
         if(hashOps.hasKey(userId, cashflow + "_" + trans_type)) {
             catBal = Float.parseFloat(hashOps.get(userId, cashflow + "_" + trans_type).toString());
         } 
-        // String transactions = hashOps.get(userId, TRANSACTIONS).toString();
-
         if(cashflow.equals(IN))
             balance += amt;
         else 
             balance -= amt;
 
         catBal += amt;
-        // transactions += ",[%s] [%s] %s: %s %.2f".formatted(df.format(new Date()), cashflow.toUpperCase(), 
-            // trans_type.toUpperCase(), toCurr, amt);
         hashOps.put(userId, BALANCE, ROUND_AMT(balance));
         hashOps.put(userId, cashflow + "_" + trans_type, ROUND_AMT(catBal));
-        // hashOps.put(userId, TRANSACTIONS, transactions);
         template.opsForList().leftPush(TRANSACTION_ID(userId), "[%s] [%s] %s: %s %.2f".formatted(DF.format(date), cashflow.toUpperCase(), 
             trans_type.toUpperCase(), toCurr, amt));
     }
@@ -198,6 +194,19 @@ public class UserRepository {
         template.expire("currencyList", 30, TimeUnit.DAYS);
     }
 
+    public void deleteTransaction(String userId, String transaction) {
+        ListOperations<String, String> listOps = template.opsForList();
+        listOps.remove(TRANSACTION_ID(userId), 1L, transaction);
+    }
+
+    public void insertUserTrip(String userId, String curr) {
+        HashOperations<String, String, Object> hashOps = template.opsForHash();
+        ListOperations<String, String> listOps = template.opsForList();
+        hashOps.put(TRAVEL_ID(userId, curr), DEF_CURR, curr);
+        hashOps.put(TRAVEL_ID(userId, curr), BALANCE, 0f);
+        listOps.leftPush(TRANSACTION_ID(TRAVEL_ID(userId, curr)), "[%s] Created %s".formatted(DF.format(new Date()), userId));
+    }
+
     private void updateUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId, User user) {
         Map<String, Object> values = new HashMap<>();
         values.put(USERID, user.getUserId());
@@ -223,9 +232,6 @@ public class UserRepository {
             for(String out : template.keys("out_")) {
                 hashOps.put(userId, out, ROUND_AMT(Float.parseFloat(hashOps.get(userId, out).toString()) * conversion));
             }
-            // String transactions = hashOps.get(userId, TRANSACTIONS).toString();
-            // transactions += ",[%s] Converted currency from %s to %s".formatted(df.format(new Date()), hashOps.get(userId, DEF_CURR), toCurr);
-            // hashOps.put(userId, TRANSACTIONS, transactions);
             template.opsForList().leftPush(TRANSACTION_ID(userId), "[%s] Converted currency from %s to %s".formatted(DF.format(new Date()), hashOps.get(userId, DEF_CURR), toCurr));
         }
         

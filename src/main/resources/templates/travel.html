@@ -35,11 +35,11 @@
     </table>
 
     <div class="header">
-        <span>LOGS</span>
+        <span>LOGS - TRAVEL</span>
     </div>
 
     <div class="log-container">
-        <form method="POST" action="/logs" class="log-form">
+        <form method="POST" action="/travel" class="log-form">
             <table class="log-table">
                 <tr>
                     <td>    
@@ -49,84 +49,49 @@
                             <option value="out">OUT</option>
                         </select>
                     </td>
-                    <td>
-                        <label for="currency">Currency</label>
-                        <select id="currency" name="currency">
-                            <option data-th-text="${defCurr}" data-th-value="${defCurr}" selected></option>
-                            <option data-th-each="curr: ${currList}" data-th-text="${curr}" data-th-value="${curr}"></option>
-                        </select>
-                    </td>
                 </tr>
                 <tr>
-                    <td colspan="2">
+                    <td>
                         <label for="date">Date</label>
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="2">
+                    <td>
                         <input class="full" id="date" type="date" name="date" max="" required>
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="2">
+                    <td>
                         <label for="transtype">Category</label>
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="2">
+                    <td>
                         <input class="full" type="text" id="transtype" name="transtype" required>
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="2">
+                    <td>
                         <label for="amt">Amount</label>
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="2">
+                    <td>
                         <input class="full" type="number" id="amt" min="1" name="amt" required>
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="2">
+                    <td>
                         <button type="reset">CLEAR</button>
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="2">
+                    <td>
                         <button type="submit">LOG</button>
                     </td>
                 </tr>
             </table>
         </form>
-
-        <div class="travel">
-            <button class="open-button" onclick="openForm()">Travel Log</button>
-            <div class="travel-popup" id="travelForm">
-                <form method="GET" data-th-action="@{/{id}/travel(id=*{userId})}">
-                    <table class="travel-container">
-                        <tr>
-                            <td colspan="2">
-                                <label for="destCurr">Currency of Destination:</label>
-                                <select id="destCurr" name="destCurr">
-                                    <option data-th-each="curr: ${currList}" data-th-text="${curr}"></option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2">
-                                <button type="submit" class="travel-button">Proceed</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2">
-                                <button type="button" class="close-button" onclick="closeForm()">Close</button>
-                            </td>
-                        </tr>
-                    </table>
-                </form>
-            </div>
-        </div>
 
         <table class="trans-table">
             <tr>
@@ -155,7 +120,11 @@
             </tr>
         </table>
     </div>
-    <script src="../static/script.js"></script>
+
+    <script>
+        var today = new Date().toISOString().split('T')[0];
+        document.getElementById("date").setAttribute("max", today);
+    </script>
     
 </body>
 </html>

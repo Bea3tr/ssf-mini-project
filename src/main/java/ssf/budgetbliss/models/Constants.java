@@ -1,6 +1,7 @@
 package ssf.budgetbliss.models;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Set;
 
 public class Constants {
@@ -24,6 +25,9 @@ public class Constants {
 
     public static String TRANSACTION_ID(String userId) {
         return userId + "_transactions";
+    }
+    public static String TRAVEL_ID(String userId, String curr) {
+        return userId + "_" + curr + "_" + DF.format(new Date());
     }
 
     public static float ROUND_AMT(float amt) {
