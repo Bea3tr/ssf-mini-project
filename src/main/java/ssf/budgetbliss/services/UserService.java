@@ -66,6 +66,10 @@ public class UserService {
         userRepo.updateBal(userId, fromCurr, cashflow, trans_type, amt, date);
     }
 
+    public void updateBal(String userId, String cashflow, String trans_type, float amt, Date date) {
+        userRepo.updateBal(userId, cashflow, trans_type, amt, date);
+    }
+
     public void changeUserId(String userId, String newId) {
         userRepo.changeUserId(userId, newId);
     }

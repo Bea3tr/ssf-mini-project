@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../static/appstyle.css">
     <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
-    <title>Logs</title>
+    <title>Travel Log</title>
 </head>
 <body data-th-object="${user}">
 
@@ -18,10 +18,10 @@
                 BudgetBliss
             </td>
             <td class="dropdown">
-                <div class="drop-button"><span data-th-text="*{userId}"></span></div>
+                <div class="drop-button"><span data-th-text="${userId}"></span></div>
                 <div class="drop-content">
-                    <a data-th-href="@{/{id}/changedetails(id=*{userId})}">Change User Details</a>
-                    <a data-th-href="@{/{id}/delete(id=*{userId})}">Delete account</a>
+                    <a data-th-href="@{/{id}/changedetails(id=${userId})}">Change User Details</a>
+                    <a data-th-href="@{/{id}/delete(id=${userId})}">Delete account</a>
                 </div>
             </td>
             <td class="login-column">
@@ -37,7 +37,10 @@
     <div class="header">
         <span>LOGS - TRAVEL</span>
     </div>
-
+    <form class="view" method="GET" action="@{/{id}/travel-log(id=${userId})}">
+        <hidden data-th-value="*{userId}"></hidden>
+        <button type="submit">CHARTS</button>
+    </form>
     <div class="log-container">
         <form method="POST" action="/travel" class="log-form">
             <table class="log-table">
@@ -72,7 +75,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <label for="amt">Amount</label>
+                        <label for="amt">Amount [<span data-th-text="*{defCurr}"></span>]</label>
                     </td>
                 </tr>
                 <tr>
@@ -80,6 +83,8 @@
                         <input class="full" type="number" id="amt" min="1" name="amt" required>
                     </td>
                 </tr>
+                <hidden type="text" name="currency" data-th-value="*{defCurr}"></hidden>
+                <hidden type="text" name="travelId" data-th-value="*{userId}"></hidden>
                 <tr>
                     <td>
                         <button type="reset">CLEAR</button>
@@ -92,13 +97,30 @@
                 </tr>
             </table>
         </form>
-
+        <br>
         <table class="trans-table">
             <tr>
-                <th colspan="3" class="trans-header">
+                <th class="trans-header">
                     RECORDS
                 </th>
+                <th class="trans-form">
+                    <form method="GET" action="/filtered">
+                        <div class="flex-row">
+                            <select name="year">
+                                <option data-th-each="year, status:${years}" data-th-value="${year}" data-th-text="${year}">2014</option>
+                            </select>
+                            <select name="month">
+                                <option data-th-each="month, status:${months}" data-th-value="${month}" data-th-text="${month}">Jan</option>
+                            </select>
+                            <button type="submit">
+                                <img src="../static/image/refresh.png">
+                            </button>
+                        </div>
+                    </form>
+                </th>
             </tr>
+        </table>
+        <table class="trans-table">
             <tr data-th-each="transaction, status:*{transactions}">
                 <td data-th-text="${transaction}"></td>
                 <td class="right">

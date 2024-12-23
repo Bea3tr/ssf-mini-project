@@ -130,10 +130,27 @@
 
         <table class="trans-table">
             <tr>
-                <th colspan="3" class="trans-header">
+                <th class="trans-header">
                     RECORDS
                 </th>
+                <th class="trans-form">
+                    <form method="GET" action="/filtered">
+                        <div class="flex-row">
+                            <select name="year">
+                                <option data-th-each="year, status:${years}" data-th-value="${year}" data-th-text="${year}">2014</option>
+                            </select>
+                            <select name="month">
+                                <option data-th-each="month, status:${months}" data-th-value="${month}" data-th-text="${month}">Jan</option>
+                            </select>
+                            <button type="submit">
+                                <img src="../static/image/refresh.png">
+                            </button>
+                        </div>
+                    </form>
+                </th>
             </tr>
+        </table>
+        <table class="trans-table">
             <tr data-th-each="transaction, status:*{transactions}">
                 <td data-th-text="${transaction}"></td>
                 <td class="right">

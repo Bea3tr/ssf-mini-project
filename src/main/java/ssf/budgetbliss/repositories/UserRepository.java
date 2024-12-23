@@ -1,7 +1,6 @@
 package ssf.budgetbliss.repositories;
 
 import java.io.StringReader;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,7 +37,6 @@ import static ssf.budgetbliss.models.Constants.*;
 public class UserRepository {
 
     private static final Logger logger = Logger.getLogger(UserRepository.class.getName());
-    private SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy");
 
     @Value("${curr.apikey}")
     private String CURR_APIKEY;
@@ -146,6 +144,27 @@ public class UserRepository {
         hashOps.put(userId, cashflow + "_" + trans_type, ROUND_AMT(catBal));
         template.opsForList().leftPush(TRANSACTION_ID(userId), "[%s] [%s] %s: %s %.2f".formatted(DF.format(date), cashflow.toUpperCase(), 
             trans_type.toUpperCase(), toCurr, amt));
+    }
+
+    public void updateBal(String userId, String cashflow, String trans_type, float amt, Date date) {
+        logger.info("[Repo] Updating balance - travel");
+        HashOperations<String, String, Object> hashOps = template.opsForHash();
+        String curr = hashOps.get(userId, DEF_CURR).toString();
+        float balance = Float.parseFloat(hashOps.get(userId, BALANCE).toString());
+        float catBal = 0f;
+        if(hashOps.hasKey(userId, cashflow + "_" + trans_type)) {
+            catBal = Float.parseFloat(hashOps.get(userId, cashflow + "_" + trans_type).toString());
+        } 
+        if(cashflow.equals(IN))
+            balance += amt;
+        else 
+            balance -= amt;
+
+        catBal += amt;
+        hashOps.put(userId, BALANCE, ROUND_AMT(balance));
+        hashOps.put(userId, cashflow + "_" + trans_type, ROUND_AMT(catBal));
+        template.opsForList().leftPush(TRANSACTION_ID(userId), "[%s] [%s] %s: %s %.2f".formatted(DF.format(date), cashflow.toUpperCase(), 
+            trans_type.toUpperCase(), curr, amt));
     }
 
     public void changeUserId(String userId, String newId) { 

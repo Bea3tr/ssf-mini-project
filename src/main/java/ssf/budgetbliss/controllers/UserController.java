@@ -183,6 +183,7 @@ public class UserController {
         mav.addObject("user", user);
         mav.addObject("currList", userSvc.currencyList());
         mav.addObject("defCurr", user.getDefCurr());
+        mav.addObject("months", MONTHS);
 
         return mav;
     }
@@ -212,6 +213,7 @@ public class UserController {
         model.addAttribute("user", user);
         model.addAttribute("currList", userSvc.currencyList());
         model.addAttribute("defCurr", user.getDefCurr());
+        model.addAttribute("months", MONTHS);
         return "logs";
     }
 
@@ -236,6 +238,8 @@ public class UserController {
         mav.setViewName("travel");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
+        mav.addObject("userId", userId);
+        mav.addObject("months", MONTHS);
         return mav;
     }
 
@@ -245,10 +249,11 @@ public class UserController {
             HttpSession sess) {
 
         String userId = (String) sess.getAttribute(USERID);
-
+        
+        String travelId = form.getFirst("travelId");
         String cashflow = form.getFirst("cashflow");
-        String transType = form.getFirst("transtype");
         String currency = form.getFirst("currency");
+        String transType = form.getFirst("transtype");
         float amt = Float.parseFloat(form.getFirst("amt"));
         Date date = new Date();
         try {
@@ -258,12 +263,12 @@ public class UserController {
             ex.printStackTrace();
         }
 
-        userSvc.updateBal(userId, currency, cashflow, transType, amt, date);
+        userSvc.updateBal(travelId, cashflow, transType, amt, date);
+        userSvc.updateBal(userId, currency, cashflow, "travel", amt, date);
 
-        User user = userSvc.getUserById(userId);
+        User user = userSvc.getUserById(travelId);
         model.addAttribute("user", user);
-        model.addAttribute("currList", userSvc.currencyList());
-        model.addAttribute("defCurr", user.getDefCurr());
+        model.addAttribute("months", MONTHS);
         return "travel";
     }
 
