@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../static/appstyle.css">
+    <link rel="stylesheet" href="/appstyle.css">
     <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
     <title>Logs</title>
 </head>
@@ -106,7 +106,16 @@
                 <form method="GET" data-th-action="@{/{id}/travel(id=*{userId})}">
                     <table class="travel-container">
                         <tr>
-                            <td colspan="2">
+                            <td>
+                                <label for="name">Name:</label> 
+                                <input type="text" name="name" pattern="^[^\s]*$" title="No spaces allowed" required>
+                                <div class="travel error" data-th-if="${#fields.hasErrors('global')}" 
+                                    data-th-text="${#fields.errors('global')}">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
                                 <label for="destCurr">Currency of Destination:</label>
                                 <select id="destCurr" name="destCurr">
                                     <option data-th-each="curr: ${currList}" data-th-text="${curr}"></option>
@@ -114,12 +123,12 @@
                             </td>
                         </tr>
                         <tr>
-                            <td colspan="2">
+                            <td>
                                 <button type="submit" class="travel-button">Proceed</button>
                             </td>
                         </tr>
                         <tr>
-                            <td colspan="2">
+                            <td>
                                 <button type="button" class="close-button" onclick="closeForm()">Close</button>
                             </td>
                         </tr>
@@ -134,37 +143,58 @@
                     RECORDS
                 </th>
                 <th class="trans-form">
-                    <form method="GET" action="/filtered">
+                    <form method="GET" data-th-action="@{/{id}/filtered(id=*{userId})}">
                         <div class="flex-row">
                             <select name="year">
-                                <option data-th-each="year, status:${years}" data-th-value="${year}" data-th-text="${year}">2014</option>
+                                <option data-th-each="year:${years}" data-th-value="${year}" data-th-text="${year}">2014</option>
                             </select>
                             <select name="month">
-                                <option data-th-each="month, status:${months}" data-th-value="${month}" data-th-text="${month}">Jan</option>
+                                <option data-th-each="month, status:${months}" data-th-value="${status.index + 1}" data-th-text="${month}">Jan</option>
                             </select>
                             <button type="submit">
-                                <img src="../static/image/refresh.png">
+                                <img src="/image/refresh.png">
                             </button>
                         </div>
                     </form>
                 </th>
             </tr>
         </table>
-        <table class="trans-table">
+        <table class="trans-table" data-th-if="${filtered == false}">
             <tr data-th-each="transaction, status:*{transactions}">
                 <td data-th-text="${transaction}"></td>
                 <td class="right">
                     <div class="flex-button">
                         <form method="GET" data-th-action="@{/{id}/edit(id=*{userId})}">
-                            <hidden type="number" name="index" data-th-value="${status.index}"></hidden>
+                            <input type="hidden" name="index" data-th-value="${status.index}">
                             <button class="log-buttons" type="submit">
-                                <img src="../static/image/edit.png">
+                                <img src="/image/edit.png">
                             </button>
                         </form>
-                        <form method="POST" data-th-action="/delete">
-                            <hidden type="text" name="trans" data-th-value="${transaction}"></hidden>
+                        <form method="POST" action="/delete-transaction">
+                            <input type="hidden" name="index" data-th-value="${status.index}">
                             <button class="log-buttons" type="submit">
-                                <img src="../static/image/bin.png">
+                                <img src="/image/bin.png">
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <table class="trans-table" data-th-unless="${filtered == false}">
+            <tr data-th-each="transaction, status:${transactions}">
+                <td data-th-text="${transaction}"></td>
+                <td class="right">
+                    <div class="flex-button">
+                        <form method="GET" data-th-action="@{/{id}/edit(id=*{userId})}">
+                            <input type="hidden" name="index" data-th-value="${status.index}">
+                            <button class="log-buttons" type="submit">
+                                <img src="/image/edit.png">
+                            </button>
+                        </form>
+                        <form method="POST" action="/delete-transaction">
+                            <input type="hidden" name="transaction" data-th-value="${transaction}">
+                            <button class="log-buttons" type="submit">
+                                <img src="/image/bin.png">
                             </button>
                         </form>
                     </div>
@@ -172,7 +202,7 @@
             </tr>
         </table>
     </div>
-    <script src="../static/script.js"></script>
+    <script src="/script.js"></script>
     
 </body>
 </html>

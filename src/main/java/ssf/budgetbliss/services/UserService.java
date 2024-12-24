@@ -46,8 +46,8 @@ public class UserService {
         userRepo.insertUser(userId, password, defCurr);
     }
 
-    public void insertUserTrip(String userId, String curr) {
-        userRepo.insertUserTrip(userId, curr);
+    public void insertUserTrip(String userId, String name, String curr) {
+        userRepo.insertUserTrip(userId, name, curr);
     }
 
     public Optional<User> getUser(String userId, String password) {
@@ -82,8 +82,20 @@ public class UserService {
         userRepo.deleteUser(userId);
     }
 
-    public void deleteTransaction(String userId, String transaction) {
-        userRepo.deleteTransaction(userId, transaction);
+    public List<String> getFilteredTransactions(String transId, int year, int month) {
+        return userRepo.getFilteredTransactions(transId, year, month);
+    }
+
+    public void editTransaction(String userId, int index, String edited) {
+        userRepo.editTransaction(userId, index, edited);
+    }
+
+    public void deleteTransaction(String userId, int index) {
+        userRepo.deleteTransaction(userId, index);
+    }
+
+    public String createTransaction(String cashflow, String curr, String trans_type, float amt, Date date) {
+        return userRepo.createTransaction(cashflow, curr, trans_type, amt, date);
     }
 
     public void updateCurr(String userId, String toCurr) {

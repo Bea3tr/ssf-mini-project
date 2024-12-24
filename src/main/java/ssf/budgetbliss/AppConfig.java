@@ -66,6 +66,7 @@ public class AppConfig {
         template.setConnectionFactory(createJedisFac());
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new StringRedisSerializer());
 
         return template;
     }

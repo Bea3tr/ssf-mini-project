@@ -1,9 +1,11 @@
 package ssf.budgetbliss.repositories;
 
 import java.io.StringReader;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +30,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
+import ssf.budgetbliss.models.Transaction;
 import ssf.budgetbliss.models.User;
 
 import static ssf.budgetbliss.models.Constants.*;
@@ -131,40 +134,39 @@ public class UserRepository {
         }
         float balance = Float.parseFloat(hashOps.get(userId, BALANCE).toString());
         float catBal = 0f;
-        if(hashOps.hasKey(userId, cashflow + "_" + trans_type)) {
-            catBal = Float.parseFloat(hashOps.get(userId, cashflow + "_" + trans_type).toString());
+        if(hashOps.hasKey(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase())) {
+            catBal = Float.parseFloat(hashOps.get(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase()).toString());
         } 
-        if(cashflow.equals(IN))
+        if(cashflow.toLowerCase().equals(IN))
             balance += amt;
         else 
             balance -= amt;
 
         catBal += amt;
         hashOps.put(userId, BALANCE, ROUND_AMT(balance));
-        hashOps.put(userId, cashflow + "_" + trans_type, ROUND_AMT(catBal));
-        template.opsForList().leftPush(TRANSACTION_ID(userId), "[%s] [%s] %s: %s %.2f".formatted(DF.format(date), cashflow.toUpperCase(), 
-            trans_type.toUpperCase(), toCurr, amt));
+        hashOps.put(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase(), ROUND_AMT(catBal));
+        template.opsForList().leftPush(TRANSACTION_ID(userId), createTransaction(cashflow, toCurr, trans_type, amt, date));
     }
 
-    public void updateBal(String userId, String cashflow, String trans_type, float amt, Date date) {
+    public void updateBal(String userId, String cashflow, String trans_type, float amt, Date date, boolean edited) {
         logger.info("[Repo] Updating balance - travel");
         HashOperations<String, String, Object> hashOps = template.opsForHash();
         String curr = hashOps.get(userId, DEF_CURR).toString();
         float balance = Float.parseFloat(hashOps.get(userId, BALANCE).toString());
         float catBal = 0f;
-        if(hashOps.hasKey(userId, cashflow + "_" + trans_type)) {
-            catBal = Float.parseFloat(hashOps.get(userId, cashflow + "_" + trans_type).toString());
+        if(hashOps.hasKey(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase())) {
+            catBal = Float.parseFloat(hashOps.get(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase()).toString());
         } 
-        if(cashflow.equals(IN))
+        if(cashflow.toLowerCase().equals(IN))
             balance += amt;
         else 
             balance -= amt;
 
         catBal += amt;
         hashOps.put(userId, BALANCE, ROUND_AMT(balance));
-        hashOps.put(userId, cashflow + "_" + trans_type, ROUND_AMT(catBal));
-        template.opsForList().leftPush(TRANSACTION_ID(userId), "[%s] [%s] %s: %s %.2f".formatted(DF.format(date), cashflow.toUpperCase(), 
-            trans_type.toUpperCase(), curr, amt));
+        hashOps.put(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase(), ROUND_AMT(catBal));
+        if(!edited)
+            template.opsForList().leftPush(TRANSACTION_ID(userId), createTransaction(cashflow, curr, trans_type, amt, date));
     }
 
     public void changeUserId(String userId, String newId) { 
@@ -213,17 +215,51 @@ public class UserRepository {
         template.expire("currencyList", 30, TimeUnit.DAYS);
     }
 
-    public void deleteTransaction(String userId, String transaction) {
+    public void editTransaction(String userId, int index, String edited) {
+        updateDeletedTransactions(userId, template.opsForList().index(TRANSACTION_ID(userId), index));
+        Transaction editedTrans = stringToTransaction(edited);
+        try {
+            updateBal(userId, editedTrans.getCashflow(), editedTrans.getTransType(), 
+            editedTrans.getAmt(), DF.parse(editedTrans.getDate()), true);
+            logger.info("[Repo - edit] Balance updated");
+        } catch (ParseException ex) {
+            logger.warning("[Repo - edit] Error parsing date. Balance not updated");
+        }
+        template.opsForList().set(TRANSACTION_ID(userId), index, edited);
+    }
+
+    public void deleteTransaction(String userId, int index) {
         ListOperations<String, String> listOps = template.opsForList();
+        String transaction = listOps.index(TRANSACTION_ID(userId), index);
+        logger.info("[Repo] Transaction deleted: " + transaction);
+        updateDeletedTransactions(userId, transaction);
         listOps.remove(TRANSACTION_ID(userId), 1L, transaction);
     }
 
-    public void insertUserTrip(String userId, String curr) {
+    public List<String> getFilteredTransactions(String transId, int year, int month) {
+        if(month == 0) {
+            return template.opsForList().range(transId, 0, -1)
+                .stream()
+                .filter(trans -> trans.contains(year + "-"))
+                .toList();
+        }
+        return template.opsForList().range(transId, 0, -1)
+                .stream()
+                .filter(trans -> trans.contains(year + "-" + month))
+                .toList();
+    }
+
+    public void insertUserTrip(String userId, String name, String curr) {
         HashOperations<String, String, Object> hashOps = template.opsForHash();
         ListOperations<String, String> listOps = template.opsForList();
-        hashOps.put(TRAVEL_ID(userId, curr), DEF_CURR, curr);
-        hashOps.put(TRAVEL_ID(userId, curr), BALANCE, 0f);
+        hashOps.put(TRAVEL_ID(userId, name), DEF_CURR, curr);
+        hashOps.put(TRAVEL_ID(userId, name), BALANCE, 0f);
         listOps.leftPush(TRANSACTION_ID(TRAVEL_ID(userId, curr)), "[%s] Created %s".formatted(DF.format(new Date()), userId));
+    }
+
+    public String createTransaction(String cashflow, String curr, String trans_type, float amt, Date date) {
+        return "[%s] [%s] %s: %s %.2f".formatted(DF.format(date), cashflow.toUpperCase(), 
+            trans_type.toUpperCase(), curr, amt);
     }
 
     private void updateUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId, User user) {
@@ -290,5 +326,30 @@ public class UserRepository {
             .toString());
         
         return conversion;
+    }
+
+    private Transaction stringToTransaction(String transaction) {
+        String[] transDetails = transaction.trim()
+                                .replaceAll("\\[", "")
+                                .replaceAll("\\]", "")
+                                .replaceAll("\\:", "")
+                                .split(" ");
+        return new Transaction(transDetails[0], transDetails[1], transDetails[2], 
+            transDetails[3], Float.parseFloat(transDetails[4]));
+    }
+
+    private void updateDeletedTransactions(String userId, String transaction) {
+        Transaction trans = stringToTransaction(transaction);
+        HashOperations<String, String, Object> hashOps = template.opsForHash();
+        String hashKey = trans.getCashflow().toLowerCase()+"_"+trans.getTransType().toLowerCase();
+        float ogAmt = Float.parseFloat(hashOps.get(userId, hashKey).toString());
+        // Update cashflow category 
+        hashOps.put(userId, hashKey, ogAmt - trans.getAmt());
+        logger.info("[Repo] Updated %s from %.2f to %.2f".formatted(hashKey, ogAmt, trans.getAmt()));
+        // Update balance
+        if(trans.getCashflow().equals("IN"))
+            hashOps.put(userId, BALANCE, Float.parseFloat(hashOps.get(userId, BALANCE).toString()) - trans.getAmt());
+        else 
+            hashOps.put(userId, BALANCE, Float.parseFloat(hashOps.get(userId, BALANCE).toString()) + trans.getAmt());
     }
 }

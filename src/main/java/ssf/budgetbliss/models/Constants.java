@@ -21,6 +21,8 @@ public class Constants {
 
     public static final String[] MONTHS = {"JAN", "FEB", "MAR", "APR", "MAY", "JUNE",
                                             "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
+
+    public static final Integer[] YEARS = {2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025};
                                             
     public static final Set<String> BG_COLOR = Set.of("rgb(255, 99, 132)", "rgb(75, 192, 192)", "rgb(255, 159, 64)",
                                             "rgb(255, 205, 86)", "rgb(54, 162, 235)", "rgb(54, 84, 235)",
@@ -29,8 +31,8 @@ public class Constants {
     public static String TRANSACTION_ID(String userId) {
         return userId + "_transactions";
     }
-    public static String TRAVEL_ID(String userId, String curr) {
-        return userId + "_" + curr + "_" + DF.format(new Date());
+    public static String TRAVEL_ID(String userId, String name) {
+        return userId + "_" + name;
     }
 
     public static float ROUND_AMT(float amt) {
