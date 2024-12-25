@@ -336,14 +336,14 @@ public class UserRepository {
             String hashKey = trans.getCashflow().toLowerCase()+"_"+trans.getTransType().toLowerCase();
             float ogAmt = Float.parseFloat(hashOps.get(userId, hashKey).toString());
             // Update cashflow category 
-            hashOps.put(userId, hashKey, ogAmt - trans.getAmt());
+            hashOps.put(userId, hashKey, ROUND_AMT(ogAmt - trans.getAmt()));
             logger.info("[Repo] Updated %s from %.2f to %.2f".formatted(hashKey, ogAmt, ogAmt-trans.getAmt()));
             // Update balance
             logger.info("[Repo] Cashflow: " + trans.getCashflow());
             if(trans.getCashflow().equals("IN"))
-                hashOps.put(userId, BALANCE, Float.parseFloat(hashOps.get(userId, BALANCE).toString()) - trans.getAmt());
+                hashOps.put(userId, BALANCE, ROUND_AMT(Float.parseFloat(hashOps.get(userId, BALANCE).toString()) - trans.getAmt()));
             else 
-                hashOps.put(userId, BALANCE, Float.parseFloat(hashOps.get(userId, BALANCE).toString()) + trans.getAmt());
+                hashOps.put(userId, BALANCE, ROUND_AMT(Float.parseFloat(hashOps.get(userId, BALANCE).toString()) + trans.getAmt()));
         }
     }
 }

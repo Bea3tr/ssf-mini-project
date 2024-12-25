@@ -37,10 +37,18 @@
     <div class="header">
         <span>LOGS - TRAVEL</span>
     </div>
-    <form class="view" method="GET" action="@{/{id}/{travelId}/charts(id=${userId}, travelId=*{userId})}">
-        <hidden data-th-value="*{userId}"></hidden>
-        <button type="submit">CHARTS</button>
-    </form>
+    <div>
+        <form class="view" method="GET" data-th-action="@{/{userId}/{travelId}/charts(userId=${userId}, travelId=*{userId})}">
+            <input type="hidden" data-th-value="*{userId}">
+            <button type="submit">CHARTS</button>
+        </form>
+        <form class="delete" method="GET" data-th-action="@{/{userId}/{travelId}/delete(userId=${userId}, travelId=*{userId})}">
+            <input type="hidden" data-th-value="*{userId}">
+            <button type="submit">DELETE</button>
+        </form>
+    </div>
+    <br>
+    <br>
     <div class="log-container">
         <form method="POST" action="/travel" class="log-form">
             <table class="log-table">

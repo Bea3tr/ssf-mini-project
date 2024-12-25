@@ -107,23 +107,30 @@ public class UserController {
         return mav;
     }
 
-    @GetMapping("/{userId}/delete")
+    @GetMapping(path={"/{userId}/delete", "/{userId}/{travelId}/delete"})
     public ModelAndView deleteUser(
             @PathVariable String userId,
+            @PathVariable(required=false) String travelId,
             HttpSession sess) {
 
         ModelAndView mav = new ModelAndView();
-
         if (!userSvc.isAuth(sess, userId)) {
             logger.info("[User Controller] Unauthenticated access");
             mav.setViewName("not-login");
             mav.setStatus(HttpStatusCode.valueOf(401));
             return mav;
         }
-        logger.info("[User Controller] Redirecting to delete account");
-        mav.setViewName("delete");
         mav.setStatus(HttpStatusCode.valueOf(200));
-        mav.addObject("user", new ValidUser());
+        if(travelId != null) {
+            logger.info("[User Controller] Redirecting to delete travel log");
+            mav.setViewName("delete-log");
+            mav.addObject("id", travelId);
+            mav.addObject("user", new ValidUser());
+        } else {
+            logger.info("[User Controller] Redirecting to delete account");
+            mav.setViewName("delete");
+            mav.addObject("user", new ValidUser());
+        }
         return mav;
     }
 
@@ -160,8 +167,48 @@ public class UserController {
         }
         userSvc.deleteUser(id);
         sess.invalidate();
-        mav.setViewName("index");
         mav.setStatus(HttpStatusCode.valueOf(200));
+        mav.setViewName("index");
+        return mav;
+    }
+
+    @PostMapping("/{travelId}/delete")
+    public ModelAndView postDelete(
+            @PathVariable String travelId,
+            @Valid @ModelAttribute("user") ValidUser user,
+            BindingResult bindings,
+            HttpSession sess) {
+
+        String id = (String) sess.getAttribute(USERID);
+        User currUser = userSvc.getUserById(id);
+
+        ModelAndView mav = new ModelAndView();
+        if (bindings.hasErrors()) {
+            mav.setViewName("delete");
+            mav.setStatus(HttpStatusCode.valueOf(400));
+            return mav;
+
+        } else if (!user.getUserId().equals(travelId)) {
+            logger.info("[User Controller] Incorrect log id");
+            FieldError err = new FieldError("user", "user", "Incorrect log ID");
+            bindings.addError(err);
+            mav.setViewName("delete");
+            mav.setStatus(HttpStatusCode.valueOf(400));
+            return mav;
+
+        } else if (!user.getPassword().equals(currUser.getPassword())) {
+            logger.info("[User Controller] Incorrect password");
+            FieldError err = new FieldError("user", "password", "Incorrect password");
+            bindings.addError(err);
+            mav.setViewName("delete");
+            mav.setStatus(HttpStatusCode.valueOf(400));
+            return mav;
+        }
+        userSvc.deleteUser(travelId);
+        mav.setStatus(HttpStatusCode.valueOf(200));
+        mav.addObject("user", userSvc.getUserById(id));
+        mav.addObject("logs", userSvc.getTravelLogs(id));
+        mav.setViewName("main");
         return mav;
     }
 
@@ -290,9 +337,7 @@ public class UserController {
             logger.info("[User Controller] Error parsing date input");
             ex.printStackTrace();
         }
-
         userSvc.updateBal(travelId, currency, cashflow, transType, amt, date, false);
-
         User user = userSvc.getUserById(travelId);
         model.addAttribute("user", user);
         model.addAttribute("userId", userId);
@@ -416,6 +461,33 @@ public class UserController {
         }
         logger.info("[User Controller] Redirecting to user track");
         User user = userSvc.getUserById(userId);
+        if(user.getTransactions().size() < toIndex)
+            toIndex = user.getTransactions().size();
+        mav.setViewName("track");
+        mav.setStatus(HttpStatusCode.valueOf(200));
+        mav.addObject("user", user);
+        mav.addObject("imgList", userSvc.getDefaultCharts(user));
+        mav.addObject("transactions", user.getTransactions().subList(0, toIndex));
+
+        return mav;
+    }
+
+    @GetMapping("/{userId}/{travelId}/charts")
+    public ModelAndView getTravelCharts(@PathVariable String userId,
+        @PathVariable String travelId,
+        HttpSession sess) {
+
+        ModelAndView mav = new ModelAndView();
+        int toIndex = 5;
+
+        if (!userSvc.isAuth(sess, userId)) {
+            logger.info("[User Controller] Unauthenticated access");
+            mav.setViewName("not-login");
+            mav.setStatus(HttpStatusCode.valueOf(401));
+            return mav;
+        }
+        logger.info("[User Controller] Redirecting to log charts");
+        User user = userSvc.getUserById(travelId);
         if(user.getTransactions().size() < toIndex)
             toIndex = user.getTransactions().size();
         mav.setViewName("track");

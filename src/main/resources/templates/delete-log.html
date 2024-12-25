@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/loginstyle.css">
+    <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
+    <title>Delete Account</title>
+</head>
+<body>
+
+    <div class="tables">
+        <table class="top-table">
+            <tr>
+                <td class="logo-column">
+                    <a href="/home"><img src="/image/new_logo.png"></a>
+                </td>
+                <td class="logo-name">
+                    BudgetBliss
+                </td>
+            </tr>
+        </table>
+
+        <h3>Please enter your <span class="underline">User ID</span> & <span class="underline">Password</span></h3>
+    
+        <form method="POST" data-th-action="@{/{id}/delete(id=${id})}" data-th-object="${user}">
+            <table class="login-table">
+                <tr>
+                    <td class="input-label">Log ID: </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="text" name="logId" data-th-field="*{userId}">
+                        <div data-th-if="${#fields.hasErrors('userId')}"
+                                data-th-errors="*{userId}" data-th-errorclass="error">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="input-label">Password: </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="password" name="password" data-th-field="*{password}">
+                        <div data-th-if="${#fields.hasErrors('password')}"
+                            data-th-errors="*{password}" data-th-errorclass="error">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <button type="submit">Delete Account</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+    
+    
+</body>
+</html>

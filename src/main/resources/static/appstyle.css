@@ -426,7 +426,7 @@ button {
 .close-button {
     background-color: rgba(255, 0, 0, 0.605);
 }
-.view {
+.view, .delete {
     width: fit-content;
     float: right;
     padding: 5px;
@@ -435,6 +435,11 @@ button {
     background-color: goldenrod;
     color: #006994;
     font-weight: bold;
+}
+.delete button {
+    background-color: red;
+    color: white;
+    font-weight: bolder;
 }
 
 .error {
