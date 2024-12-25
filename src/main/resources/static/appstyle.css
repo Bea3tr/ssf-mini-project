@@ -52,7 +52,32 @@ img {
     cursor: pointer;
 
 }
+.flex-main {
+    display: flex;
+}
+.travel-logs {
+    color: white;
+    width:25%;
+    padding: 10px 0px;
+    margin: 10px;
+    border-radius: 20px;
+    text-align: center;
+    border: #006994 solid;
+    background-color: #006994;
+    word-wrap: break-word;
+}
 
+.travel-logs li {
+    font-size: 75%;
+    padding: 5px;
+    margin: 7.5px;
+    background-color: gold;
+    border-radius: 10px;
+    color: #006994;
+}
+.links {
+    width:75%;
+}
 .top-table {
     position: relative;
     width: 100%;
@@ -242,9 +267,10 @@ label {
 .transactions {
     margin-top: 20px;
 }
-.transactions ul {
+.transactions ul, .travel-logs ul {
     list-style: none;
     padding: 0;
+    margin: 5px;
 }
 .transactions li {
     text-align: left;

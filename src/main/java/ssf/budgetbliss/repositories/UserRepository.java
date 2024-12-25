@@ -123,7 +123,7 @@ public class UserRepository {
         return user;
     }
 
-    public void updateBal(String userId, String fromCurr, String cashflow, String trans_type, float amt, Date date) {
+    public void updateBal(String userId, String fromCurr, String cashflow, String trans_type, float amt, Date date, boolean isEdit) {
         logger.info("[Repo] Updating balance");
         HashOperations<String, String, Object> hashOps = template.opsForHash();
         String toCurr = hashOps.get(userId, DEF_CURR).toString();
@@ -145,28 +145,8 @@ public class UserRepository {
         catBal += amt;
         hashOps.put(userId, BALANCE, ROUND_AMT(balance));
         hashOps.put(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase(), ROUND_AMT(catBal));
-        template.opsForList().leftPush(TRANSACTION_ID(userId), createTransaction(cashflow, toCurr, trans_type, amt, date));
-    }
-
-    public void updateBal(String userId, String cashflow, String trans_type, float amt, Date date, boolean edited) {
-        logger.info("[Repo] Updating balance - travel");
-        HashOperations<String, String, Object> hashOps = template.opsForHash();
-        String curr = hashOps.get(userId, DEF_CURR).toString();
-        float balance = Float.parseFloat(hashOps.get(userId, BALANCE).toString());
-        float catBal = 0f;
-        if(hashOps.hasKey(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase())) {
-            catBal = Float.parseFloat(hashOps.get(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase()).toString());
-        } 
-        if(cashflow.toLowerCase().equals(IN))
-            balance += amt;
-        else 
-            balance -= amt;
-
-        catBal += amt;
-        hashOps.put(userId, BALANCE, ROUND_AMT(balance));
-        hashOps.put(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase(), ROUND_AMT(catBal));
-        if(!edited)
-            template.opsForList().leftPush(TRANSACTION_ID(userId), createTransaction(cashflow, curr, trans_type, amt, date));
+        if(!isEdit)
+            template.opsForList().leftPush(TRANSACTION_ID(userId), createTransaction(cashflow, toCurr, trans_type, amt, date));
     }
 
     public void changeUserId(String userId, String newId) { 
@@ -219,7 +199,7 @@ public class UserRepository {
         updateDeletedTransactions(userId, template.opsForList().index(TRANSACTION_ID(userId), index));
         Transaction editedTrans = stringToTransaction(edited);
         try {
-            updateBal(userId, editedTrans.getCashflow(), editedTrans.getTransType(), 
+            updateBal(userId, editedTrans.getCurr(), editedTrans.getCashflow(), editedTrans.getTransType(), 
             editedTrans.getAmt(), DF.parse(editedTrans.getDate()), true);
             logger.info("[Repo - edit] Balance updated");
         } catch (ParseException ex) {
@@ -228,15 +208,17 @@ public class UserRepository {
         template.opsForList().set(TRANSACTION_ID(userId), index, edited);
     }
 
-    public void deleteTransaction(String userId, int index) {
+    public void deleteTransaction(String userId, String transaction) {
         ListOperations<String, String> listOps = template.opsForList();
-        String transaction = listOps.index(TRANSACTION_ID(userId), index);
         logger.info("[Repo] Transaction deleted: " + transaction);
         updateDeletedTransactions(userId, transaction);
         listOps.remove(TRANSACTION_ID(userId), 1L, transaction);
     }
 
     public List<String> getFilteredTransactions(String transId, int year, int month) {
+        logger.info("[Repo - filter] Params: " + year + "-" + String.format("%02d", month));
+        List<String> transactions = template.opsForList().range(transId, 0, -1);
+        logger.info("[Repo - filter] Transactions: " + transactions);
         if(month == 0) {
             return template.opsForList().range(transId, 0, -1)
                 .stream()
@@ -245,7 +227,7 @@ public class UserRepository {
         }
         return template.opsForList().range(transId, 0, -1)
                 .stream()
-                .filter(trans -> trans.contains(year + "-" + month))
+                .filter(trans -> trans.contains(year + "-" + String.format("%02d", month)))
                 .toList();
     }
 
@@ -254,7 +236,7 @@ public class UserRepository {
         ListOperations<String, String> listOps = template.opsForList();
         hashOps.put(TRAVEL_ID(userId, name), DEF_CURR, curr);
         hashOps.put(TRAVEL_ID(userId, name), BALANCE, 0f);
-        listOps.leftPush(TRANSACTION_ID(TRAVEL_ID(userId, curr)), "[%s] Created %s".formatted(DF.format(new Date()), userId));
+        listOps.leftPush(TRANSACTION_ID(TRAVEL_ID(userId, name)), "[%s] Created %s".formatted(DF.format(new Date()), userId));
     }
 
     public String createTransaction(String cashflow, String curr, String trans_type, float amt, Date date) {
@@ -289,7 +271,14 @@ public class UserRepository {
             }
             template.opsForList().leftPush(TRANSACTION_ID(userId), "[%s] Converted currency from %s to %s".formatted(DF.format(new Date()), hashOps.get(userId, DEF_CURR), toCurr));
         }
-        
+    }
+
+    public List<String> getTravelLogs(String userId) {
+        logger.info("[Repo] UserId: " + userId);
+        return template.keys(userId + "_*")
+            .stream()
+            .filter(key -> !key.contains("transactions"))
+            .toList();
     }
 
     // private String arrayToString(String[] arr, String delimiter) {
@@ -304,6 +293,7 @@ public class UserRepository {
     //     return sb.substring(0, sb.length()-1);
     // }
 
+    /* Private Methods */
     private float convertCurrency(String from, String to) {
         String url = UriComponentsBuilder.fromUriString(CONVERT_URL)
             .queryParam("apikey", CURR_APIKEY)
@@ -339,17 +329,21 @@ public class UserRepository {
     }
 
     private void updateDeletedTransactions(String userId, String transaction) {
-        Transaction trans = stringToTransaction(transaction);
-        HashOperations<String, String, Object> hashOps = template.opsForHash();
-        String hashKey = trans.getCashflow().toLowerCase()+"_"+trans.getTransType().toLowerCase();
-        float ogAmt = Float.parseFloat(hashOps.get(userId, hashKey).toString());
-        // Update cashflow category 
-        hashOps.put(userId, hashKey, ogAmt - trans.getAmt());
-        logger.info("[Repo] Updated %s from %.2f to %.2f".formatted(hashKey, ogAmt, trans.getAmt()));
-        // Update balance
-        if(trans.getCashflow().equals("IN"))
-            hashOps.put(userId, BALANCE, Float.parseFloat(hashOps.get(userId, BALANCE).toString()) - trans.getAmt());
-        else 
-            hashOps.put(userId, BALANCE, Float.parseFloat(hashOps.get(userId, BALANCE).toString()) + trans.getAmt());
+        logger.info("[Repo] Transaction to delete: " + transaction);
+        if(transaction.contains(":")) {
+            Transaction trans = stringToTransaction(transaction);
+            HashOperations<String, String, Object> hashOps = template.opsForHash();
+            String hashKey = trans.getCashflow().toLowerCase()+"_"+trans.getTransType().toLowerCase();
+            float ogAmt = Float.parseFloat(hashOps.get(userId, hashKey).toString());
+            // Update cashflow category 
+            hashOps.put(userId, hashKey, ogAmt - trans.getAmt());
+            logger.info("[Repo] Updated %s from %.2f to %.2f".formatted(hashKey, ogAmt, ogAmt-trans.getAmt()));
+            // Update balance
+            logger.info("[Repo] Cashflow: " + trans.getCashflow());
+            if(trans.getCashflow().equals("IN"))
+                hashOps.put(userId, BALANCE, Float.parseFloat(hashOps.get(userId, BALANCE).toString()) - trans.getAmt());
+            else 
+                hashOps.put(userId, BALANCE, Float.parseFloat(hashOps.get(userId, BALANCE).toString()) + trans.getAmt());
+        }
     }
 }

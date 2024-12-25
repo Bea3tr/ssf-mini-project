@@ -84,6 +84,7 @@ public class LoginController {
         mav.setViewName("main");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", userSuccess);
+        mav.addObject("logs", userSvc.getTravelLogs(userId));
         return mav;
     }
     

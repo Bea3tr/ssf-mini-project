@@ -62,12 +62,8 @@ public class UserService {
         return userRepo.userExists(userId);
     }
 
-    public void updateBal(String userId, String fromCurr, String cashflow, String trans_type, float amt, Date date) {
-        userRepo.updateBal(userId, fromCurr, cashflow, trans_type, amt, date);
-    }
-
-    public void updateBal(String userId, String cashflow, String trans_type, float amt, Date date) {
-        userRepo.updateBal(userId, cashflow, trans_type, amt, date);
+    public void updateBal(String userId, String fromCurr, String cashflow, String trans_type, float amt, Date date, boolean isEdit) {
+        userRepo.updateBal(userId, fromCurr, cashflow, trans_type, amt, date, isEdit);
     }
 
     public void changeUserId(String userId, String newId) {
@@ -90,8 +86,8 @@ public class UserService {
         userRepo.editTransaction(userId, index, edited);
     }
 
-    public void deleteTransaction(String userId, int index) {
-        userRepo.deleteTransaction(userId, index);
+    public void deleteTransaction(String userId, String transaction) {
+        userRepo.deleteTransaction(userId, transaction);
     }
 
     public String createTransaction(String cashflow, String curr, String trans_type, float amt, Date date) {
@@ -100,6 +96,10 @@ public class UserService {
 
     public void updateCurr(String userId, String toCurr) {
         userRepo.updateCurr(userId, toCurr);
+    }
+
+    public List<String> getTravelLogs(String userId) {
+        return userRepo.getTravelLogs(userId);
     }
 
     public Set<String> currencyList() {

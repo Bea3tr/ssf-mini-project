@@ -1,7 +1,6 @@
 package ssf.budgetbliss.models;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Set;
 
 public class Constants {

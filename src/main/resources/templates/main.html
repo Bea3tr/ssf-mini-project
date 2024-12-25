@@ -42,17 +42,29 @@
 
     <br>
 
-    <div>
-        <div class="logs">
-            <a class="no-underline" data-th-href="@{/{userId}/logs(userId=*{userId})}"><span>LOGS</span></a>
+    <div class="flex-main">
+        <div class="travel-logs">
+            <span class="underline">Travel Logs</span>
+            <ul>
+                <li data-th-each="log:${logs}">
+                    <a data-th-href="@{/{userId}/{travelId}/logs(userId=*{userId}, travelId=${log})}" data-th-text="${log}">
+                    </a>
+                </li>
+            </ul>
         </div>
-        <div class="track">
-            <a class="no-underline" data-th-href="@{/{userId}/track(userId=*{userId})}"><span>TRACK</span></a>
-        </div>
-        <div class="info">
-            <a class="no-underline" data-th-href="@{/{userId}/info(userId=*{userId})}"><span>INFORMATION</span></a>
+        <div class="links">
+            <div class="logs">
+                <a class="no-underline" data-th-href="@{/{userId}/logs(userId=*{userId})}"><span>LOGS</span></a>
+            </div>
+            <div class="track">
+                <a class="no-underline" data-th-href="@{/{userId}/track(userId=*{userId})}"><span>TRACK</span></a>
+            </div>
+            <div class="info">
+                <a class="no-underline" data-th-href="@{/{userId}/info(userId=*{userId})}"><span>INFORMATION</span></a>
+            </div>
         </div>
     </div>
+    
 
 </body>
 </html>

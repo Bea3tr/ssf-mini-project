@@ -8,7 +8,6 @@ import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.MultiValueMap;
@@ -50,6 +49,7 @@ public class UserController {
         }
         User user = userSvc.getUserById(id);
         model.addAttribute("user", user);
+        model.addAttribute("logs", userSvc.getTravelLogs(id));
         return "main";
     }
 
@@ -165,9 +165,10 @@ public class UserController {
         return mav;
     }
 
-    @GetMapping("/{userId}/logs")
+    @GetMapping(path={"/{userId}/logs", "/{userId}/{travelId}/logs"})
     public ModelAndView getUserLogs(
             @PathVariable String userId,
+            @PathVariable(required=false) String travelId,
             HttpSession sess) {
 
         ModelAndView mav = new ModelAndView();
@@ -178,17 +179,24 @@ public class UserController {
             mav.setStatus(HttpStatusCode.valueOf(401));
             return mav;
         }
-        logger.info("[User Controller] Redirecting to user logs");
-        User user = userSvc.getUserById(userId);
-        mav.setViewName("logs");
+        if(travelId == null) {
+            logger.info("[User Controller] Redirecting to user logs");
+            User user = userSvc.getUserById(userId);
+            mav.setViewName("logs");
+            mav.addObject("user", user);
+            mav.addObject("transactions", user.getTransactions());
+        } else {
+            logger.info("[User Controller] Redirecting to travel logs");
+            User user = userSvc.getUserById(travelId);
+            mav.setViewName("travel");
+            mav.addObject("user", user);
+            mav.addObject("userId", userId);
+            mav.addObject("transactions", user.getTransactions());
+        }
         mav.setStatus(HttpStatusCode.valueOf(200));
-        mav.addObject("user", user);
         mav.addObject("currList", userSvc.currencyList());
-        mav.addObject("defCurr", user.getDefCurr());
         mav.addObject("months", MONTHS);
         mav.addObject("years", YEARS);
-        mav.addObject("filtered", false);
-
         return mav;
     }
 
@@ -211,47 +219,41 @@ public class UserController {
             ex.printStackTrace();
         }
 
-        userSvc.updateBal(userId, currency, cashflow, transType, amt, date);
+        userSvc.updateBal(userId, currency, cashflow, transType, amt, date, false);
 
         User user = userSvc.getUserById(userId);
         model.addAttribute("user", user);
         model.addAttribute("currList", userSvc.currencyList());
-        model.addAttribute("defCurr", user.getDefCurr());
+        model.addAttribute("transactions", user.getTransactions());
         model.addAttribute("months", MONTHS);
         model.addAttribute("years", YEARS);
-        model.addAttribute("filtered", false);
         return "logs";
     }
 
-    @GetMapping("/{userId}/travel")
-    public ModelAndView getTravel(
+    // Creating new travel log
+    @PostMapping("/{userId}/travel")
+    public ModelAndView postUserTravel(
             @PathVariable String userId,
-            @RequestParam MultiValueMap<String, String> form,
-            @Valid @RequestParam("name") String name,
+            @RequestBody MultiValueMap<String, String> form,
             BindingResult bindings,
             HttpSession sess) {
 
         ModelAndView mav = new ModelAndView();
         mav.addObject("months", MONTHS);
         mav.addObject("years", YEARS);
-        mav.addObject("filtered", false);
 
-        if (!userSvc.isAuth(sess, userId)) {
-            logger.info("[User Controller] Unauthenticated access");
-            mav.setViewName("not-login");
-            mav.setStatus(HttpStatusCode.valueOf(401));
-            return mav;
-        }
         // String name = form.getFirst("name");
-        if(userSvc.userExists(TRAVEL_ID(userId, name))) {
+        if(userSvc.userExists(TRAVEL_ID(userId, form.getFirst("name"))) || form.getFirst("name").contains("transactions")) {
+            logger.info("[User Controller - Post travel] Name exists");
             User user = userSvc.getUserById(userId);
-            ObjectError err = new ObjectError("globalError", "Name has already been used");
+            ObjectError err = new ObjectError("name", "Invalid name. Name in use or name contains 'transactions'");
             bindings.addError(err);
             mav.setViewName("logs");
             mav.setStatus(HttpStatusCode.valueOf(400));
             mav.addObject("user", user);
+            mav.addObject("transactions", user.getTransactions());
             mav.addObject("currList", userSvc.currencyList());
-            mav.addObject("defCurr", user.getDefCurr());
+            mav.addObject("error", bindings.getAllErrors());
             return mav;
         }
         logger.info("[User Controller] Inserting currency details");
@@ -262,9 +264,12 @@ public class UserController {
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
         mav.addObject("userId", userId);
+        mav.addObject("transactions", user.getTransactions());
+        
         return mav;
     }
 
+    // Adding new records to travel log
     @PostMapping("/travel")
     public String postTravel(Model model,
             @RequestBody MultiValueMap<String, String> form,
@@ -277,6 +282,7 @@ public class UserController {
         String currency = form.getFirst("currency");
         String transType = form.getFirst("transtype");
         float amt = Float.parseFloat(form.getFirst("amt"));
+        logger.info("[User Controler] Hidden inputs: " + travelId + " " + currency);
         Date date = new Date();
         try {
             date = DF.parse(form.getFirst("date"));
@@ -285,20 +291,20 @@ public class UserController {
             ex.printStackTrace();
         }
 
-        userSvc.updateBal(travelId, cashflow, transType, amt, date);
-        userSvc.updateBal(userId, currency, cashflow, "travel", amt, date);
+        userSvc.updateBal(travelId, currency, cashflow, transType, amt, date, false);
 
         User user = userSvc.getUserById(travelId);
         model.addAttribute("user", user);
         model.addAttribute("userId", userId);
         model.addAttribute("months", MONTHS);
         model.addAttribute("years", YEARS);
-        model.addAttribute("filtered", false);
+        model.addAttribute("transactions", user.getTransactions());
         return "travel";
     }
 
-    @GetMapping("/{userId}/edit")
+    @GetMapping(path={"/{userId}/edit", "/{userId}/{travelId}/edit"})
     public ModelAndView getEdit(@PathVariable String userId,
+            @PathVariable(required=false) String travelId,
             @RequestParam("index") int index,
             HttpSession sess) {
 
@@ -313,9 +319,13 @@ public class UserController {
         mav.setViewName("edit");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("userId", userId);
-        mav.addObject("transId", userId);
         mav.addObject("index", index);
         mav.addObject("currList", userSvc.currencyList());
+
+        if(travelId != null)
+            mav.addObject("transId", travelId);
+        else 
+            mav.addObject("transId", userId);
     
         return mav;
     }
@@ -340,15 +350,13 @@ public class UserController {
             logger.info("[User Controller] Error parsing date input");
             ex.printStackTrace();
         }
-        String edited = userSvc.createTransaction(cashflow, currency, transType, amt, date);
-        userSvc.editTransaction(transId, index, edited);
-
+        userSvc.editTransaction(transId, index, userSvc.createTransaction(cashflow, currency, transType, amt, date));
         User user = userSvc.getUserById(transId);
         model.addAttribute("user", user);
         model.addAttribute("months", MONTHS);
         model.addAttribute("years", YEARS);
         model.addAttribute("currList", userSvc.currencyList());
-        model.addAttribute("filtered", false);
+        model.addAttribute("transactions", user.getTransactions());
         if(transId.contains("_")) {
             model.addAttribute("userId", userId);
             return "travel";
@@ -356,32 +364,9 @@ public class UserController {
         return "logs";
     }
 
-    @GetMapping("/{userId}/{travelId}/edit")
-    public ModelAndView getEdit(@PathVariable String userId,
-            @PathVariable String travelId,
-            @RequestParam("index") int index,
-            HttpSession sess) {
-
-        ModelAndView mav = new ModelAndView();
-
-        if (!userSvc.isAuth(sess, userId)) {
-            logger.info("[User Controller] Unauthenticated access");
-            mav.setViewName("not-login");
-            mav.setStatus(HttpStatusCode.valueOf(401));
-            return mav;
-        }
-        mav.setViewName("edit");
-        mav.setStatus(HttpStatusCode.valueOf(200));
-        mav.addObject("userId", userId);
-        mav.addObject("transId", travelId);
-        mav.addObject("index", index);
-        mav.addObject("currList", userSvc.currencyList());
-    
-        return mav;
-    }
-
-    @GetMapping("/{userId}/filtered")
+    @GetMapping(path={"/{userId}/filtered", "/{userId}/{travelId}/filtered"})
     public ModelAndView getFiltered(@PathVariable String userId,
+            @PathVariable(required=false) String travelId,
             @RequestParam MultiValueMap<String, String> form,
             HttpSession sess) {
 
@@ -403,13 +388,13 @@ public class UserController {
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
         mav.addObject("currList", userSvc.currencyList());
-        mav.addObject("filtered", true);
+        mav.addObject("months", MONTHS);
+        mav.addObject("years", YEARS);
         mav.addObject("transactions", userSvc.getFilteredTransactions(TRANSACTION_ID(userId), year, month));
         if(userId.contains("_")){
             mav.addObject("userId", userId);
             mav.setViewName("travel");
         } else {
-            mav.addObject("defCurr", user.getDefCurr());
             mav.setViewName("logs");
         }
         return mav;
@@ -421,6 +406,7 @@ public class UserController {
             HttpSession sess) {
 
         ModelAndView mav = new ModelAndView();
+        int toIndex = 5;
 
         if (!userSvc.isAuth(sess, userId)) {
             logger.info("[User Controller] Unauthenticated access");
@@ -430,11 +416,13 @@ public class UserController {
         }
         logger.info("[User Controller] Redirecting to user track");
         User user = userSvc.getUserById(userId);
+        if(user.getTransactions().size() < toIndex)
+            toIndex = user.getTransactions().size();
         mav.setViewName("track");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
         mav.addObject("imgList", userSvc.getDefaultCharts(user));
-        mav.addObject("transactions", user.getTransactions().subList(0, 5));
+        mav.addObject("transactions", user.getTransactions().subList(0, toIndex));
 
         return mav;
     }
@@ -463,20 +451,23 @@ public class UserController {
 
     @PostMapping("/delete-transaction")
     public String postDeleteTransaction(Model model,
-        @RequestBody String index,
+        @RequestBody MultiValueMap<String, String> form,
         HttpSession sess) {
 
-        // logger.info("[User Controller] Transaction to delete: " + transaction);
-        String userId = (String) sess.getAttribute(USERID);
-        userSvc.deleteTransaction(userId, Integer.parseInt(index.split("\\=")[1]));
+        String id = form.getFirst("id");
+        logger.info("[User Controller] Transaction to delete: " + form.getFirst("transaction"));
+        userSvc.deleteTransaction(id, form.getFirst("transaction"));
 
-        User user = userSvc.getUserById(userId);
+        User user = userSvc.getUserById(id);
         model.addAttribute("user", user);
         model.addAttribute("currList", userSvc.currencyList());
-        model.addAttribute("defCurr", user.getDefCurr());
         model.addAttribute("months", MONTHS);
         model.addAttribute("years", YEARS);
-        model.addAttribute("filtered", false);
+        model.addAttribute("transactions", user.getTransactions());
+        if(id.contains("_")){
+            model.addAttribute("userId", sess.getAttribute(USERID));
+            return "travel";
+        }
         return "logs";
     }
 

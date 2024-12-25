@@ -6,7 +6,7 @@ public class ValidUser {
 
     @NotNull(message="User ID cannot be null")
     @NotEmpty(message="User ID cannot be empty")
-    @Pattern(regexp="^[^\\s_]*$", message="User ID cannot contain spaces and \"_\"")
+    @Pattern(regexp="^[^\s_]*$", message="User ID cannot contain spaces or \"_\"")
     private String userId;
 
     @NotNull(message="Password cannot be null")
