@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../static/appstyle.css">
+    <link rel="stylesheet" href="/appstyle.css">
     <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
     <title>Logs</title>
 </head>
@@ -148,8 +148,7 @@
                                 <option data-th-each="year:${years}" data-th-value="${year}" data-th-text="${year}"></option>
                             </select>
                             <select name="month">
-                                <option value="0">ALL</option>
-                                <option data-th-each="month, status:${months}" data-th-value="${status.index + 1}" data-th-text="${month}">Jan</option>
+                                <option data-th-each="month, status:${months}" data-th-value="${status.index}" data-th-text="${month}">Jan</option>
                             </select>
                             <button type="submit">
                                 <img src="/image/refresh.png">

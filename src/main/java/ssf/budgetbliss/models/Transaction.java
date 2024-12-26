@@ -1,6 +1,12 @@
 package ssf.budgetbliss.models;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.logging.Logger;
+
 public class Transaction {
+
+    private static final Logger logger = Logger.getLogger(Transaction.class.getName());
 
     // [DATE] [CASHFLOW] TRANSTYPE: CURR AMT
     private String date;
@@ -37,4 +43,23 @@ public class Transaction {
         return "[%s] [%s] %s: %s %.2f".formatted(date, cashflow, transType, curr, amt);
     }
     
+    public static Transaction stringToTransaction(String transaction) {
+        String[] transDetails = transaction.trim()
+                                .replaceAll("\\[", "")
+                                .replaceAll("\\]", "")
+                                .replaceAll("\\:", "")
+                                .split(" ");
+        return new Transaction(transDetails[0], transDetails[1], transDetails[2], 
+            transDetails[3], Float.parseFloat(transDetails[4]));
+    }
+
+    public static List<Transaction> stringToTransactions(List<String> transactions) {
+        List<Transaction> result = new LinkedList<>();
+        for (String transaction : transactions) {
+            if(transaction.contains(":")) {
+                result.add(stringToTransaction(transaction));
+            }
+        }
+        return result;
+    }
 }

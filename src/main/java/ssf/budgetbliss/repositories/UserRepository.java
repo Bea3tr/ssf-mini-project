@@ -5,6 +5,7 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -145,6 +146,10 @@ public class UserRepository {
         catBal += amt;
         hashOps.put(userId, BALANCE, ROUND_AMT(balance));
         hashOps.put(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase(), ROUND_AMT(catBal));
+        String year = DF.format(date).split("-")[0];
+        if(!template.opsForList().range(YEARLIST(userId), 0, -1).contains(year)) {
+            template.opsForList().leftPush(YEARLIST(userId), year);
+        }
         if(!isEdit)
             template.opsForList().leftPush(TRANSACTION_ID(userId), createTransaction(cashflow, toCurr, trans_type, amt, date));
     }
@@ -169,8 +174,7 @@ public class UserRepository {
 
     public void deleteUser(String userId) {
         logger.info("[Repo] Deleting user: " + userId);
-        template.delete(userId);
-        template.delete(TRANSACTION_ID(userId));
+        template.delete(template.keys(userId + "*"));
     }
 
     public Set<String> getCurrency() {
@@ -197,7 +201,7 @@ public class UserRepository {
 
     public void editTransaction(String userId, int index, String edited) {
         updateDeletedTransactions(userId, template.opsForList().index(TRANSACTION_ID(userId), index));
-        Transaction editedTrans = stringToTransaction(edited);
+        Transaction editedTrans = Transaction.stringToTransaction(edited);
         try {
             updateBal(userId, editedTrans.getCurr(), editedTrans.getCashflow(), editedTrans.getTransType(), 
             editedTrans.getAmt(), DF.parse(editedTrans.getDate()), true);
@@ -216,9 +220,6 @@ public class UserRepository {
     }
 
     public List<String> getFilteredTransactions(String transId, int year, int month) {
-        logger.info("[Repo - filter] Params: " + year + "-" + String.format("%02d", month));
-        List<String> transactions = template.opsForList().range(transId, 0, -1);
-        logger.info("[Repo - filter] Transactions: " + transactions);
         if(month == 0) {
             return template.opsForList().range(transId, 0, -1)
                 .stream()
@@ -278,20 +279,16 @@ public class UserRepository {
         return template.keys(userId + "_*")
             .stream()
             .filter(key -> !key.contains("transactions"))
+            .filter(key -> !key.contains("yearList"))
             .toList();
     }
 
-    // private String arrayToString(String[] arr, String delimiter) {
-    //     StringBuilder sb = new StringBuilder();
-    //     for (int i = 0; i < arr.length; i++) {
-    //         if(i != arr.length-1) {
-    //             sb.append(arr[i]).append(delimiter);
-    //         } else {
-    //             sb.append(arr[i]);
-    //         }
-    //     }
-    //     return sb.substring(0, sb.length()-1);
-    // }
+    public List<Integer> getYears(String id) {
+        List<Integer> years = new LinkedList<>();
+        for(String year : template.opsForList().range(YEARLIST(id), 0, -1))
+            years.add(Integer.parseInt(year));
+        return years;
+    }
 
     /* Private Methods */
     private float convertCurrency(String from, String to) {
@@ -318,20 +315,10 @@ public class UserRepository {
         return conversion;
     }
 
-    private Transaction stringToTransaction(String transaction) {
-        String[] transDetails = transaction.trim()
-                                .replaceAll("\\[", "")
-                                .replaceAll("\\]", "")
-                                .replaceAll("\\:", "")
-                                .split(" ");
-        return new Transaction(transDetails[0], transDetails[1], transDetails[2], 
-            transDetails[3], Float.parseFloat(transDetails[4]));
-    }
-
     private void updateDeletedTransactions(String userId, String transaction) {
         logger.info("[Repo] Transaction to delete: " + transaction);
         if(transaction.contains(":")) {
-            Transaction trans = stringToTransaction(transaction);
+            Transaction trans = Transaction.stringToTransaction(transaction);
             HashOperations<String, String, Object> hashOps = template.opsForHash();
             String hashKey = trans.getCashflow().toLowerCase()+"_"+trans.getTransType().toLowerCase();
             float ogAmt = Float.parseFloat(hashOps.get(userId, hashKey).toString());

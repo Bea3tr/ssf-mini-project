@@ -232,6 +232,7 @@ public class UserController {
             mav.setViewName("logs");
             mav.addObject("user", user);
             mav.addObject("transactions", user.getTransactions());
+            mav.addObject("years", userSvc.getYearList(userId));
         } else {
             logger.info("[User Controller] Redirecting to travel logs");
             User user = userSvc.getUserById(travelId);
@@ -239,11 +240,11 @@ public class UserController {
             mav.addObject("user", user);
             mav.addObject("userId", userId);
             mav.addObject("transactions", user.getTransactions());
+            mav.addObject("years", userSvc.getYearList(travelId));
         }
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("currList", userSvc.currencyList());
         mav.addObject("months", MONTHS);
-        mav.addObject("years", YEARS);
         return mav;
     }
 
@@ -273,7 +274,7 @@ public class UserController {
         model.addAttribute("currList", userSvc.currencyList());
         model.addAttribute("transactions", user.getTransactions());
         model.addAttribute("months", MONTHS);
-        model.addAttribute("years", YEARS);
+        model.addAttribute("years", userSvc.getYearList(userId));
         return "logs";
     }
 
@@ -287,7 +288,6 @@ public class UserController {
 
         ModelAndView mav = new ModelAndView();
         mav.addObject("months", MONTHS);
-        mav.addObject("years", YEARS);
 
         // String name = form.getFirst("name");
         if(userSvc.userExists(TRAVEL_ID(userId, form.getFirst("name"))) || form.getFirst("name").contains("transactions")) {
@@ -301,6 +301,7 @@ public class UserController {
             mav.addObject("transactions", user.getTransactions());
             mav.addObject("currList", userSvc.currencyList());
             mav.addObject("error", bindings.getAllErrors());
+            mav.addObject("years", userSvc.getYearList(userId));
             return mav;
         }
         logger.info("[User Controller] Inserting currency details");
@@ -312,6 +313,7 @@ public class UserController {
         mav.addObject("user", user);
         mav.addObject("userId", userId);
         mav.addObject("transactions", user.getTransactions());
+        mav.addObject("years", userSvc.getYearList(user.getUserId()));
         
         return mav;
     }
@@ -342,7 +344,7 @@ public class UserController {
         model.addAttribute("user", user);
         model.addAttribute("userId", userId);
         model.addAttribute("months", MONTHS);
-        model.addAttribute("years", YEARS);
+        model.addAttribute("years", userSvc.getYearList(travelId));
         model.addAttribute("transactions", user.getTransactions());
         return "travel";
     }
@@ -399,7 +401,7 @@ public class UserController {
         User user = userSvc.getUserById(transId);
         model.addAttribute("user", user);
         model.addAttribute("months", MONTHS);
-        model.addAttribute("years", YEARS);
+        model.addAttribute("years", userSvc.getYearList(transId));
         model.addAttribute("currList", userSvc.currencyList());
         model.addAttribute("transactions", user.getTransactions());
         if(transId.contains("_")) {
@@ -434,7 +436,7 @@ public class UserController {
         mav.addObject("user", user);
         mav.addObject("currList", userSvc.currencyList());
         mav.addObject("months", MONTHS);
-        mav.addObject("years", YEARS);
+        mav.addObject("years", userSvc.getYearList(userId));
         mav.addObject("transactions", userSvc.getFilteredTransactions(TRANSACTION_ID(userId), year, month));
         if(userId.contains("_")){
             mav.addObject("userId", userId);
@@ -534,7 +536,7 @@ public class UserController {
         model.addAttribute("user", user);
         model.addAttribute("currList", userSvc.currencyList());
         model.addAttribute("months", MONTHS);
-        model.addAttribute("years", YEARS);
+        model.addAttribute("years", userSvc.getYearList(id));
         model.addAttribute("transactions", user.getTransactions());
         if(id.contains("_")){
             model.addAttribute("userId", sess.getAttribute(USERID));
