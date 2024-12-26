@@ -447,8 +447,8 @@ public class UserController {
         return mav;
     }
 
-    @GetMapping("/{userId}/track")
-    public ModelAndView getUserTrack(
+    @GetMapping("/{userId}/charts")
+    public ModelAndView getUserCharts(
             @PathVariable String userId,
             HttpSession sess) {
 
@@ -461,11 +461,11 @@ public class UserController {
             mav.setStatus(HttpStatusCode.valueOf(401));
             return mav;
         }
-        logger.info("[User Controller] Redirecting to user track");
+        logger.info("[User Controller] Redirecting to user charts");
         User user = userSvc.getUserById(userId);
         if(user.getTransactions().size() < toIndex)
             toIndex = user.getTransactions().size();
-        mav.setViewName("track");
+        mav.setViewName("chart");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
         mav.addObject("imgList", userSvc.getDefaultCharts(user));
@@ -492,13 +492,43 @@ public class UserController {
         User user = userSvc.getUserById(travelId);
         if(user.getTransactions().size() < toIndex)
             toIndex = user.getTransactions().size();
-        mav.setViewName("track");
+        mav.setViewName("chart-travel");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
-        mav.addObject("imgList", userSvc.getDefaultCharts(user));
+        mav.addObject("userId", userId);
+        mav.addObject("imgList", userSvc.getCharts(travelId, "2024-ALL"));
+        mav.addObject("months", MONTHS);
+        mav.addObject("years", userSvc.getYearList(travelId));
         mav.addObject("transactions", user.getTransactions().subList(0, toIndex));
 
         return mav;
+    }
+
+    @PostMapping(path={"/{userId}/filteredcharts", "/{userId}/{travelId}/filteredcharts"})
+    public String postCharts(Model model,
+        @PathVariable String userId,
+        @PathVariable(required=false) String travelId,
+        @RequestBody MultiValueMap<String, String> form) {
+
+        String html = "chart";
+        int toIndex = 5;
+        logger.info("[User Controller] Redirecting to filtered charts");
+        if(travelId != null) {
+            model.addAttribute("userId", userId);
+            userId = travelId;
+            html = "chart-travel";
+        } 
+        User user = userSvc.getUserById(userId);
+        if(user.getTransactions().size() < toIndex)
+            toIndex = user.getTransactions().size();
+      
+        model.addAttribute("user", user);
+        model.addAttribute("imgList", 
+            userSvc.getCharts(userId, form.getFirst("year")+"-"+form.getFirst("month")));
+        model.addAttribute("months", MONTHS);
+        model.addAttribute("years", userSvc.getYearList(userId));
+        model.addAttribute("transactions", user.getTransactions().subList(0, toIndex));
+        return html;
     }
 
     @GetMapping("/{userId}/info")

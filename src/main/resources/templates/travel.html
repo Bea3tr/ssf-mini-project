@@ -39,11 +39,9 @@
     </div>
     <div>
         <form class="view" method="GET" data-th-action="@{/{userId}/{travelId}/charts(userId=${userId}, travelId=*{userId})}">
-            <input type="hidden" data-th-value="*{userId}">
             <button type="submit">CHARTS</button>
         </form>
         <form class="delete" method="GET" data-th-action="@{/{userId}/{travelId}/delete(userId=${userId}, travelId=*{userId})}">
-            <input type="hidden" data-th-value="*{userId}">
             <button type="submit">DELETE</button>
         </form>
     </div>

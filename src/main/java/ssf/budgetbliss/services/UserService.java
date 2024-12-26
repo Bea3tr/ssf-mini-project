@@ -36,9 +36,15 @@ import ssf.budgetbliss.repositories.UserRepository;
 public class UserService {
 
     private static final Logger logger = Logger.getLogger(UserService.class.getName());
+    
+    @Value("${local.url}")
+    private String LOCAL_URL;
 
     @Value("${curr.apikey}")
     private String CURR_APIKEY;
+
+    @Value("${my.apikey}")
+    private String MY_APIKEY;
 
     @Autowired
     private UserRepository userRepo;
@@ -226,6 +232,29 @@ public class UserService {
                 .add("data", dataObj)
                 .build())
             .build(); 
+    }
+
+    public Map<String, String> getCharts(String id, String filter) {
+        Map<String, String> imgList = new HashMap<>();
+        RequestEntity<String> req = RequestEntity.post(LOCAL_URL)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON)
+            .body(Json.createObjectBuilder()
+                .add("apikey", MY_APIKEY)
+                .add("id", id)
+                .build().toString());
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> resp = restTemplate.exchange(req, String.class);
+        String payload = resp.getBody();
+        JsonObject chartsByFilter = Json.createReader(new StringReader(payload))
+            .readObject()
+            .getJsonObject(id)
+            .getJsonObject(filter);
+        imgList.put("IN vs OUT", getUrl(chartsByFilter.getJsonObject("in vs out")));
+        imgList.put("DAILY TRENDS", getUrl(chartsByFilter.getJsonObject("daily trends")));
+        imgList.put("SPENDING CATEGORIES", getUrl(chartsByFilter.getJsonObject("spending categories")));
+        return imgList;
     }
 
     private JsonArray buildStringArray(Set<String> values) {

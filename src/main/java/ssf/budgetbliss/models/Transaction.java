@@ -2,11 +2,8 @@ package ssf.budgetbliss.models;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class Transaction {
-
-    private static final Logger logger = Logger.getLogger(Transaction.class.getName());
 
     // [DATE] [CASHFLOW] TRANSTYPE: CURR AMT
     private String date;

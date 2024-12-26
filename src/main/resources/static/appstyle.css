@@ -217,6 +217,11 @@ label {
     border-radius: 5px;
     margin: 5px 0;
 }
+.track-form {
+    padding: 5px 20px;
+    border-radius: 5px;
+    border: solid #006994;
+}
 .green {
     background-color: rgba(71, 205, 71, 0.596);
 }
@@ -356,7 +361,8 @@ button {
     text-align: center;
     width: 30%;
 }
-.trans-form select {
+
+.trans-form select, .track-form select {
     margin: 2px;
     padding: 2px;
     background-color: #006994;
@@ -366,7 +372,7 @@ button {
     text-align: center;
     color: gold;
 }
-.trans-form button {
+.trans-form button, .track-form button {
     background-color: gold;
     width: fit-content;
     height: fit-content;
@@ -375,7 +381,7 @@ button {
     line-height: 0;
     border: solid #006994 1.5px;
 }
-.trans-form img {
+.trans-form img, .track-form img {
     width: 25px;
     height: auto;
 }
@@ -441,7 +447,6 @@ button {
     color: white;
     font-weight: bolder;
 }
-
 .error {
     font-size:  12px;
     color: red;

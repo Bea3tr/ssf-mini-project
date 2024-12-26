@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/appstyle.css">
+    <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
+    <title>Track</title>
+</head>
+<body data-th-object="${user}">
+
+    <table class="top-table">
+        <tr>
+            <td class="logo-column">
+                <a href="/home"><img src="/image/new_logo.png"></a>
+            </td>
+            <td class="logo-name">
+                BudgetBliss
+            </td>
+            <td class="dropdown">
+                <div class="drop-button"><span data-th-text="${userId}"></span></div>
+                <div class="drop-content">
+                    <a data-th-href="@{/{id}/changedetails(id=${userId})}">Change User Details</a>
+                    <a data-th-href="@{/{id}/delete(id=${userId})}">Delete account</a>
+                </div>
+            </td>
+            <td class="login-column">
+                <form method="POST" action="/logout">
+                    <div>
+                        <button class="logout" type="submit">Logout</button>
+                    </div>
+                </form>
+            </td>
+        </tr>
+    </table>
+
+    <div class="header">
+        <span>TRACK</span>
+    </div>
+
+    <div class="track-header">
+        <h6 class="gold">Balance: $<span class="underline" data-th-text="*{balance}"></span></h6>
+        <h6 class="green">IN: $<span class="underline" data-th-text="*{in}"></span></h6>
+        <h6 class="red">OUT: $<span class="underline" data-th-text="*{out}"></span></h6>
+        <form class="track-form" method="POST" data-th-action="@{/{userId}/{travelId}/filteredcharts(userId=${userId}, travelId=*{userId})}">
+            <div class="flex-row">
+                <select name="year">
+                    <option data-th-each="year:${years}" data-th-value="${year}" data-th-text="${year}"></option>
+                </select>
+                <select name="month">
+                    <option data-th-each="month, status:${months}" data-th-value="${month}" data-th-text="${month}"></option>
+                </select>
+                <button type="submit">
+                    <img src="/image/refresh.png">
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="container">
+        <div class="grid">
+            <div class="card" data-th-each="img: ${imgList}">
+                <h2 data-th-text="${img.key}"></h2>
+                <img class="chart" data-th-src="${img.value}">
+            </div>
+        </div>
+
+        <div class="card transactions">
+            <h2>Recent Transactions</h2>
+            <ul>
+                <li data-th-each="trans: ${transactions}">
+                    <span data-th-text="${trans}"></span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+</body>
+</html>

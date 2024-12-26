@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../static/appstyle.css">
+    <link rel="stylesheet" href="/appstyle.css">
     <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
     <title>Track</title>
 </head>
@@ -42,6 +42,19 @@
         <h6 class="gold">Balance: $<span class="underline" data-th-text="*{balance}"></span></h6>
         <h6 class="green">IN: $<span class="underline" data-th-text="*{in}"></span></h6>
         <h6 class="red">OUT: $<span class="underline" data-th-text="*{out}"></span></h6>
+        <form class="track-form" method="POST" data-th-action="@{/{userId}/filteredcharts(userId=*{userId})}">
+            <div class="flex-row">
+                <select name="year">
+                    <option data-th-each="year:${years}" data-th-value="${year}" data-th-text="${year}"></option>
+                </select>
+                <select name="month">
+                    <option data-th-each="month, status:${months}" data-th-value="${month}" data-th-text="${month}"></option>
+                </select>
+                <button type="submit">
+                    <img src="/image/refresh.png">
+                </button>
+            </div>
+        </form>
     </div>
 
     <div class="container">

@@ -322,6 +322,8 @@ public class UserRepository {
             HashOperations<String, String, Object> hashOps = template.opsForHash();
             String hashKey = trans.getCashflow().toLowerCase()+"_"+trans.getTransType().toLowerCase();
             float ogAmt = Float.parseFloat(hashOps.get(userId, hashKey).toString());
+            if(!trans.getCurr().equals(hashOps.get(userId, DEF_CURR)))
+                ogAmt *= convertCurrency(trans.getCurr(), hashOps.get(userId, DEF_CURR).toString());
             // Update cashflow category 
             hashOps.put(userId, hashKey, ROUND_AMT(ogAmt - trans.getAmt()));
             logger.info("[Repo] Updated %s from %.2f to %.2f".formatted(hashKey, ogAmt, ogAmt-trans.getAmt()));
