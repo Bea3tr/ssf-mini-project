@@ -132,7 +132,7 @@ img {
     text-decoration: underline;
 }
 
-.logs, .track, .info {
+.logs, .track, .profile {
     padding: 7%;
     margin: 10px;
     border-radius: 20px;
@@ -145,7 +145,7 @@ img {
     background-color: #006a94b3;
 }
 
-.logs:hover, .logs a:hover, .track:hover, .track a:hover, .info:hover, .info a:hover {
+.logs:hover, .logs a:hover, .track:hover, .track a:hover, .profile:hover, .profile a:hover {
     background-color: goldenrod;
     color: gold;
 }
@@ -154,7 +154,7 @@ img {
     background-color: #006a9484;
 }
 
-.info {
+.profile {
     background-color: #006a944c;
 }
 .log-table {

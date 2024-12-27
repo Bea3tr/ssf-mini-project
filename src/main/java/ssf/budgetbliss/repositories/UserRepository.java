@@ -51,28 +51,13 @@ public class UserRepository {
     @Autowired @Qualifier("redis-string")
     private RedisTemplate<String, String> template;
 
-    private User dbToUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId) {
-        logger.info("[Repo] Retrieving user information from database");
-        Map<String, Object> userDetails = hashOps.entries(userId);
-        User user = new User();
-        float in = 0f;
-        float out = 0f;
-        for(String hashkey : userDetails.keySet()) {
-            if(hashkey.contains("in_"))
-                in += Float.parseFloat(userDetails.get(hashkey).toString());
-            else if (hashkey.contains("out_"))
-                out += Float.parseFloat(userDetails.get(hashkey).toString());
-        }
-        if(!userId.contains("_")) {
-            user = new User(userId, userDetails.get(PASSWORD).toString(), userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
-            in, out, listOps.range(TRANSACTION_ID(userId), 0, -1));
-        } else {
-            user = new User(userId, userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
-            in, out, listOps.range(TRANSACTION_ID(userId), 0, -1));
-        }
-        return user;
+    public List<String> getAllUserLogs(String userId) {
+        return template.keys(userId + "*")
+            .stream()
+            .filter(key -> !key.contains("transactions"))
+            .filter(key -> !key.contains("yearList"))
+            .toList();
     }
-
     public JsonObject dbToJson(String userId) {
         HashOperations<String, String, Object> hashOps = template.opsForHash();
         logger.info("[Repo] Retrieving user information from database - to Json");
@@ -219,6 +204,10 @@ public class UserRepository {
         listOps.remove(TRANSACTION_ID(userId), 1L, transaction);
     }
 
+    public List<String> getTransactions(String transId) {
+        return template.opsForList().range(transId, 0, -1);
+    }
+
     public List<String> getFilteredTransactions(String transId, int year, int month) {
         if(month == 0) {
             return template.opsForList().range(transId, 0, -1)
@@ -243,20 +232,6 @@ public class UserRepository {
     public String createTransaction(String cashflow, String curr, String trans_type, float amt, Date date) {
         return "[%s] [%s] %s: %s %.2f".formatted(DF.format(date), cashflow.toUpperCase(), 
             trans_type.toUpperCase(), curr, amt);
-    }
-
-    private void updateUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId, User user) {
-        Map<String, Object> values = new HashMap<>();
-        values.put(USERID, user.getUserId());
-        values.put(PASSWORD, user.getPassword());
-        values.put(DEF_CURR, user.getDefCurr());
-        values.put(BALANCE, user.getBalance());
-        values.put(IN, user.getIn());
-        values.put(OUT, user.getOut());
-        hashOps.putAll(userId, values);
-        for (String trans : user.getTransactions()) {
-            listOps.rightPush(TRANSACTION_ID(userId), trans);
-        }
     }
 
     public void updateCurr(String userId, String toCurr) {
@@ -291,6 +266,28 @@ public class UserRepository {
     }
 
     /* Private Methods */
+    private User dbToUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId) {
+        logger.info("[Repo] Retrieving user information from database");
+        Map<String, Object> userDetails = hashOps.entries(userId);
+        User user = new User();
+        float in = 0f;
+        float out = 0f;
+        for(String hashkey : userDetails.keySet()) {
+            if(hashkey.contains("in_"))
+                in += Float.parseFloat(userDetails.get(hashkey).toString());
+            else if (hashkey.contains("out_"))
+                out += Float.parseFloat(userDetails.get(hashkey).toString());
+        }
+        if(!userId.contains("_")) {
+            user = new User(userId, userDetails.get(PASSWORD).toString(), userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
+            in, out, listOps.range(TRANSACTION_ID(userId), 0, -1));
+        } else {
+            user = new User(userId, userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
+            in, out, listOps.range(TRANSACTION_ID(userId), 0, -1));
+        }
+        return user;
+    }
+
     private float convertCurrency(String from, String to) {
         String url = UriComponentsBuilder.fromUriString(CONVERT_URL)
             .queryParam("apikey", CURR_APIKEY)
@@ -313,6 +310,20 @@ public class UserRepository {
             .toString());
         
         return conversion;
+    }
+
+    private void updateUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId, User user) {
+        Map<String, Object> values = new HashMap<>();
+        values.put(USERID, user.getUserId());
+        values.put(PASSWORD, user.getPassword());
+        values.put(DEF_CURR, user.getDefCurr());
+        values.put(BALANCE, user.getBalance());
+        values.put(IN, user.getIn());
+        values.put(OUT, user.getOut());
+        hashOps.putAll(userId, values);
+        for (String trans : user.getTransactions()) {
+            listOps.rightPush(TRANSACTION_ID(userId), trans);
+        }
     }
 
     private void updateDeletedTransactions(String userId, String transaction) {

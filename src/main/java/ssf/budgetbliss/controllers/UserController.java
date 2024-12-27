@@ -468,7 +468,7 @@ public class UserController {
         mav.setViewName("chart");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
-        mav.addObject("imgList", userSvc.getDefaultCharts(user));
+        mav.addObject("imgList", userSvc.getCharts(userId, "2024-ALL"));
         mav.addObject("transactions", user.getTransactions().subList(0, toIndex));
 
         return mav;
@@ -531,8 +531,8 @@ public class UserController {
         return html;
     }
 
-    @GetMapping("/{userId}/info")
-    public ModelAndView getUserInfo(
+    @GetMapping("/{userId}/profile")
+    public ModelAndView getUserProfile(
             @PathVariable String userId,
             HttpSession sess) {
 
@@ -544,11 +544,12 @@ public class UserController {
             mav.setStatus(HttpStatusCode.valueOf(401));
             return mav;
         }
-        logger.info("[User Controller] Redirecting to user info");
+        logger.info("[User Controller] Redirecting to user profile");
         User user = userSvc.getUserById(userId);
-        mav.setViewName("info");
+        mav.setViewName("profile");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
+        mav.addObject("logDetails", userSvc.getLogDetails(userId));
 
         return mav;
     }

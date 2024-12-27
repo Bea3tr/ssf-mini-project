@@ -28,6 +28,7 @@ import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonReader;
 import jakarta.servlet.http.HttpSession;
+import ssf.budgetbliss.models.LogDetails;
 import ssf.budgetbliss.models.Transaction;
 import ssf.budgetbliss.models.User;
 import ssf.budgetbliss.repositories.UserRepository;
@@ -65,6 +66,10 @@ public class UserService {
         return userRepo.getUserById(userId);
     }
 
+    public List<String> getAllUserLogs(String userId) {
+        return userRepo.getAllUserLogs(userId);
+    }
+
     public boolean userExists(String userId) {
         return userRepo.userExists(userId);
     }
@@ -83,6 +88,10 @@ public class UserService {
 
     public void deleteUser(String userId) {
         userRepo.deleteUser(userId);
+    }
+
+    public List<String> getTransactions(String transId) {
+        return userRepo.getTransactions(transId);
     }
 
     public List<String> getFilteredTransactions(String transId, int year, int month) {
@@ -137,10 +146,10 @@ public class UserService {
     public boolean isAuth(HttpSession sess, String userId) {
         String id = (String) sess.getAttribute(USERID);
         if (id == null || !userId.equals(id)) {
-            logger.info("[User Service] Unauthenticated access");
+            logger.info("[Service] Unauthenticated access");
             return false;
         }
-        logger.info("[User Service] Access authenticated");
+        logger.info("[Service] Access authenticated");
         return true;
     }
 
@@ -236,7 +245,7 @@ public class UserService {
 
     public Map<String, String> getCharts(String id, String filter) {
         Map<String, String> imgList = new HashMap<>();
-        RequestEntity<String> req = RequestEntity.post(LOCAL_URL)
+        RequestEntity<String> req = RequestEntity.post(LOCAL_URL + "/userdb")
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .body(Json.createObjectBuilder()
@@ -252,7 +261,7 @@ public class UserService {
             .getJsonObject(id)
             .getJsonObject(filter);
         imgList.put("IN vs OUT", getUrl(chartsByFilter.getJsonObject("in vs out")));
-        imgList.put("DAILY TRENDS", getUrl(chartsByFilter.getJsonObject("daily trends")));
+        imgList.put("TRENDS", getUrl(chartsByFilter.getJsonObject("trends")));
         imgList.put("SPENDING CATEGORIES", getUrl(chartsByFilter.getJsonObject("spending categories")));
         return imgList;
     }
@@ -313,6 +322,27 @@ public class UserService {
             cashMap.values().stream().toList());
     }
 
+    public JsonObject getMonthlyTrend(List<Transaction> transactions) {
+        // Monthly cashflow
+        Map<String, Float> cashMap = new HashMap<>();
+        for(Transaction trans : transactions) {
+            // [DATE] [CASHFLOW] TYPE CURR AMT
+            String month = MONTHS[Integer.parseInt(trans.getDate().split("-")[1])];
+            logger.info("[Service] Month: " + month);
+            String flow = trans.getCashflow().toLowerCase();
+            float amt = trans.getAmt();
+            if(flow.equals(OUT))
+                amt *= -1;
+            if(!cashMap.containsKey(month)) {
+                cashMap.put(month, amt);
+            } else {
+                cashMap.put(month, cashMap.get(month) + amt);
+            }
+        }
+        return chartObj("bar", cashMap.keySet(), 
+            cashMap.values().stream().toList());
+    }
+
     public JsonObject getAllCategories(List<Transaction> transactions) {
         // All transaction type
         Map<String, Float> transType = new HashMap<>();
@@ -328,5 +358,35 @@ public class UserService {
         }
         return chartObj("doughnut", transType.keySet(), 
             transType.values().stream().toList());
+    }
+
+    public List<LogDetails> getLogDetails(String userId) {
+        List<String> userLogs = userRepo.getAllUserLogs(userId);
+        List<LogDetails> logDetails = new LinkedList<>();
+        RequestEntity<String> req = RequestEntity.post(LOCAL_URL + "/userall")
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON)
+            .body(Json.createObjectBuilder()
+                .add("apikey", MY_APIKEY)
+                .add("id", userId)
+                .build().toString());
+    
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> resp = restTemplate.exchange(req, String.class);
+        String payload = resp.getBody();
+
+        for (String id : userLogs) {
+            User user = userRepo.getUserById(id);
+        
+            JsonObject chartsById = Json.createReader(new StringReader(payload))
+                .readObject()
+                .getJsonObject(userId)
+                .getJsonObject(id);
+
+            logDetails.add(new LogDetails(id, user.getBalance(), user.getIn(), user.getOut(), 
+                getUrl(chartsById.getJsonObject("trends")), 
+                getUrl(chartsById.getJsonObject("spending categories"))));
+        }
+        return logDetails;
     }
 }

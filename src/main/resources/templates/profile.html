@@ -34,15 +34,30 @@
         </tr>
     </table>
     <br>
-    <div class="header">
-        <span>Balance: $<span class="underline" data-th-text="*{balance}"></span></span>
-        <span>IN: $<span class="underline" data-th-text="*{in}"></span></span>
-        <span>OUT: $<span class="underline" data-th-text="*{out}"></span></span>
-    </div>
 
     <div class="header">
-        <span>User Information</span>
+        <span>User Profile</span>
     </div>
+
+    <div class="log-container" data-th-each="logDetail:${logDetails}" data-th-object="${logDetail}">
+        <div data-th-text="*{logName}"></div>
+        <div class="track-header">
+            <h6 class="gold width-third">Balance: $<span class="underline" data-th-text="*{balance}"></span></h6>
+            <h6 class="green width-third">IN: $<span class="underline" data-th-text="*{in}"></span></h6>
+            <h6 class="red width-third">OUT: $<span class="underline" data-th-text="*{out}"></span></h6>
+        </div>
+        <div class="grid">
+            <div class="card">
+                <h2>TRENDS</h2>
+                <img class="chart" data-th-src="*{trendUrl}">
+            </div>
+            <div class="card">
+                <h2>SPENDING CATEGORIES</h2>
+                <img class="chart" data-th-src="*{categoryUrl}">
+            </div>
+        </div>
+    </div>
+    
 
 
 </body>

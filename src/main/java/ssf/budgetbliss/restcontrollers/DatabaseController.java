@@ -54,15 +54,54 @@ public class DatabaseController {
         }
 
         JsonObjectBuilder chartBuilder = Json.createObjectBuilder();
-        for(String ym : filteredTrans.keySet()) {
+        for(String logId : filteredTrans.keySet()) {
+            JsonObject trends = userSvc.getDailyTrend(filteredTrans.get(logId));
+            if(logId.split("-")[1].equals("ALL") && !id.contains("_"))
+                trends = userSvc.getMonthlyTrend(filteredTrans.get(logId));
             // Get default charts
-            JsonObject inout = userSvc.getInOutChart(filteredTrans.get(ym));
-            JsonObject dailyTrends = userSvc.getDailyTrend(filteredTrans.get(ym));
-            JsonObject allCategories = userSvc.getAllCategories(filteredTrans.get(ym));
-            chartBuilder.add(ym, Json.createObjectBuilder() 
-                .add("in vs out", inout)
-                .add("daily trends", dailyTrends)
-                .add("spending categories", allCategories)
+            chartBuilder.add(logId, Json.createObjectBuilder() 
+                .add("in vs out", userSvc.getInOutChart(filteredTrans.get(logId)))
+                .add("trends", trends)
+                .add("spending categories", userSvc.getAllCategories(filteredTrans.get(logId)))
+                .build());   
+        }
+        try {
+            if(obj.getString("apikey").equals(apikey)) {
+                return ResponseEntity.status(201)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body((respBuilder.add(id, chartBuilder.build()).build()).toString());
+            } else {
+                return ResponseEntity.status(400)
+                    .body("{\"message\": \"Missing or wrong apikey\"}");
+            }
+        } catch (Exception ex) {
+            return ResponseEntity.status(400)
+                .body("{\"message\": \"Invalid payload\"}");
+        }
+    }
+
+    @PostMapping(path="/userall", consumes=MediaType.APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> postUserAll(@RequestBody String payload) {
+        JsonReader reader = Json.createReader(new StringReader(payload));
+        JsonObject obj = reader.readObject();
+        String id = obj.getString("id");
+        List<String> idList = userSvc.getAllUserLogs(id);
+        Map<String, List<Transaction>> transById = new HashMap<>();
+        JsonObjectBuilder respBuilder = Json.createObjectBuilder();
+
+        // Filter by id
+        for(String logId : idList) {
+            transById.put(logId, Transaction.stringToTransactions(userSvc.getTransactions(TRANSACTION_ID(id))));
+        }
+        JsonObjectBuilder chartBuilder = Json.createObjectBuilder();
+        for(String logId : transById.keySet()) {
+            JsonObject trends = userSvc.getDailyTrend(transById.get(logId));
+            if(!logId.contains("_"))
+                trends = userSvc.getMonthlyTrend(transById.get(logId));
+            // Get default charts
+            chartBuilder.add(logId, Json.createObjectBuilder() 
+                .add("trends", trends)
+                .add("spending categories", userSvc.getAllCategories(transById.get(logId)))
                 .build());   
         }
         try {
