@@ -38,6 +38,12 @@
         <span>LOGS</span>
     </div>
 
+    <div class="track-header">
+        <h6 class="gold width-third">Balance: $<span class="underline" data-th-text="*{balance}"></span></h6>
+        <h6 class="green width-third">IN: $<span class="underline" data-th-text="*{in}"></span></h6>
+        <h6 class="red width-third">OUT: $<span class="underline" data-th-text="*{out}"></span></h6>
+    </div>
+
     <div class="log-container">
         <form method="POST" action="/logs" class="log-form">
             <table class="log-table">

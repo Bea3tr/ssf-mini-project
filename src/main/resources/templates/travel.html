@@ -37,6 +37,11 @@
     <div class="header">
         <span>LOGS - TRAVEL</span>
     </div>
+    <div class="travel-header">
+        <h6 class="green width-half">Remaining: $<span class="underline" data-th-text="*{balance}"></span></h6>
+        <h6 class="red width-half">Expenditure: $<span class="underline" data-th-text="*{out}"></span></h6>
+    </div>
+    
     <div>
         <form class="view" method="GET" data-th-action="@{/{userId}/{travelId}/charts(userId=${userId}, travelId=*{userId})}">
             <button type="submit">CHARTS</button>
