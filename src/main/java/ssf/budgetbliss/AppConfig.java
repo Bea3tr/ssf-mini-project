@@ -48,18 +48,7 @@ public class AppConfig {
         return jedisFac;
     }
 
-    @Bean("redis-obj")
-    public RedisTemplate<String, Object> createRedisTemplateObj() {
-
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(createJedisFac());
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setHashKeySerializer(new StringRedisSerializer());
-
-        return template;
-    }
-
-    @Bean("redis-string")
+    @Bean("redis-0")
     public RedisTemplate<String, String> createRedisTemplate() {
 
         RedisTemplate<String, String> template = new RedisTemplate<>();

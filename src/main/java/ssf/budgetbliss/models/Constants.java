@@ -37,7 +37,7 @@ public class Constants {
     }
 
     public static float ROUND_AMT(float amt) {
-        return Math.round(amt * 100) / 100;
+        return (Math.round(amt * 100)) / 100.00f;
     }
    
 }

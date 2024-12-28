@@ -22,19 +22,16 @@
             </tr>
         </table>
 
-        <h3>Please enter your <span class="underline">User ID</span> & <span class="underline">Password</span></h3>
+        <h3>Please enter your <span class="underline">Log ID</span> & <span class="underline">Password</span></h3>
     
-        <form method="POST" data-th-action="@{/{id}/delete(id=${id})}" data-th-object="${user}">
+        <form method="POST" data-th-action="@{/{id}/delete(id=${id})}">
             <table class="login-table">
                 <tr>
                     <td class="input-label">Log ID: </td>
                 </tr>
                 <tr>
                     <td>
-                        <input type="text" name="logId" data-th-field="*{userId}">
-                        <div data-th-if="${#fields.hasErrors('userId')}"
-                                data-th-errors="*{userId}" data-th-errorclass="error">
-                        </div>
+                        <input type="text" name="logId" required>
                     </td>
                 </tr>
                 <tr>
@@ -42,15 +39,15 @@
                 </tr>
                 <tr>
                     <td>
-                        <input type="password" name="password" data-th-field="*{password}">
-                        <div data-th-if="${#fields.hasErrors('password')}"
-                            data-th-errors="*{password}" data-th-errorclass="error">
-                        </div>
+                        <input type="password" name="password" required>
                     </td>
+                </tr>
+                <tr data-th-each="err:${error}">
+                    <td class="error" data-th-text="${err.defaultMessage}"></td>
                 </tr>
                 <tr>
                     <td colspan="2">
-                        <button type="submit">Delete Account</button>
+                        <button type="submit">Delete Log</button>
                     </td>
                 </tr>
             </table>

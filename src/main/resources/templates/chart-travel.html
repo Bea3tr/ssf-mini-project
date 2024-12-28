@@ -35,12 +35,12 @@
     </table>
 
     <div class="header">
-        <span>CHARTS [<span data-th-text="*{userid}"></span>]</span>
+        <span>CHARTS [<span data-th-text="*{userId}"></span>]</span>
     </div>
 
     <div class="track-header">
-        <h6 class="green width-half">Remaining: $<span class="underline" data-th-text="*{balance}"></span></h6>
-        <h6 class="red width-half">Expenditure: $<span class="underline" data-th-text="*{out}"></span></h6>
+        <h6 class="green width-half">Remaining: <span data-th-text="*{defCurr}"></span> <span class="underline" data-th-text="*{balance}"></span></h6>
+        <h6 class="red width-half">Expenditure: <span data-th-text="*{defCurr}"></span> <span class="underline" data-th-text="*{out}"></span></h6>
     </div>
 
     <form class="track-form" method="POST" data-th-action="@{/{userId}/{travelId}/filteredcharts(userId=${userId}, travelId=*{userId})}">

@@ -1,6 +1,11 @@
 package ssf.budgetbliss.services;
 
 import java.io.StringReader;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.Set;
+import java.util.TreeMap;
 
 import static ssf.budgetbliss.models.Constants.*;
 
@@ -18,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.javapoet.ClassName;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -118,6 +125,10 @@ public class UserService {
         return userRepo.getTravelLogs(userId);
     }
 
+    public String getDefCurr(String userId) {
+        return userRepo.getDefCurr(userId);
+    }
+
     public Set<String> currencyList() {
         Set<String> currList = userRepo.getCurrency();
         if(currList.size() > 0) {
@@ -157,60 +168,60 @@ public class UserService {
         return userRepo.getYears(id);
     }
 
-    // IN vs OUT, daily cashflow over a month, type of transactions (IN & OUT)
-    public Map<String, String> getDefaultCharts(User user) {
-        Map<String, String> imgUrls = new HashMap<>();
+    // // IN vs OUT, daily cashflow over a month, type of transactions (IN & OUT)
+    // public Map<String, String> getDefaultCharts(User user) {
+    //     Map<String, String> imgUrls = new HashMap<>();
         
-        // IN vs OUT
-        Set<String> labels = new HashSet<>(){{
-            add("IN");
-            add("OUT");
-        }};
-        List<Float> data = new LinkedList<>() {{
-            add(user.getIn());
-            add(user.getOut());
-        }};
-        // logger.info("IN: " + user.getIn() + " OUT: " + user.getOut());
-        JsonObject param = chartObj("doughnut", labels, data);
-        // logger.info("IN vs OUT: " + param.toString());
-        imgUrls.put("CASHFLOW", getUrl(param));
+    //     // IN vs OUT
+    //     Set<String> labels = new HashSet<>(){{
+    //         add("IN");
+    //         add("OUT");
+    //     }};
+    //     List<Float> data = new LinkedList<>() {{
+    //         add(user.getIn());
+    //         add(user.getOut());
+    //     }};
+    //     // logger.info("IN: " + user.getIn() + " OUT: " + user.getOut());
+    //     JsonObject param = chartObj("doughnut", labels, data);
+    //     // logger.info("IN vs OUT: " + param.toString());
+    //     imgUrls.put("CASHFLOW", getUrl(param));
 
-        // Daily cashflow
-        List<String> transactions = user.getTransactions();
-        Map<String, Float> cashMap = new HashMap<>();
-        for(String trans : transactions) {
-            if(!trans.contains(":"))
-                continue;
-            // [DATE] [CASHFLOW] TYPE CURR AMT
-            String[] details = trans.trim().split(" ");
-            String date = details[0];
-            String flow = details[1];
-            float amt = Float.parseFloat(details[4]);
-            if(flow.equals("[OUT]"))
-                amt *= -1;
-            if(!cashMap.containsKey(date)) {
-                cashMap.put(date, amt);
-            } else {
-                cashMap.put(date, cashMap.get(date) + amt);
-            }
-        }
-        JsonObject param2 = chartObj("bar", cashMap.keySet(), 
-            cashMap.values().stream().toList());
-        imgUrls.put("Daily Trends", getUrl(param2));
+    //     // Daily cashflow
+    //     List<String> transactions = user.getTransactions();
+    //     Map<String, Float> cashMap = new HashMap<>();
+    //     for(String trans : transactions) {
+    //         if(!trans.contains(":"))
+    //             continue;
+    //         // [DATE] [CASHFLOW] TYPE CURR AMT
+    //         String[] details = trans.trim().split(" ");
+    //         String date = details[0];
+    //         String flow = details[1];
+    //         float amt = Float.parseFloat(details[4]);
+    //         if(flow.equals("[OUT]"))
+    //             amt *= -1;
+    //         if(!cashMap.containsKey(date)) {
+    //             cashMap.put(date, amt);
+    //         } else {
+    //             cashMap.put(date, cashMap.get(date) + amt);
+    //         }
+    //     }
+    //     JsonObject param2 = chartObj("bar", cashMap.keySet(), 
+    //         cashMap.values().stream().toList());
+    //     imgUrls.put("Daily Trends", getUrl(param2));
 
-        // All transaction type
-        JsonObject userObj = userRepo.dbToJson(user.getUserId());
-        Map<String, Float> transType = new HashMap<>();
-        for(String key : userObj.keySet()) {
-            if(key.contains("out_")) {
-                transType.put(key.split("_")[1], Float.parseFloat(userObj.getString(key)));
-            }
-        }
-        JsonObject param3 = chartObj("doughnut", transType.keySet(), 
-            transType.values().stream().toList());
-        imgUrls.put("Spending Categories", getUrl(param3));
-        return imgUrls;
-    }
+    //     // All transaction type
+    //     JsonObject userObj = userRepo.dbToJson(user.getUserId());
+    //     Map<String, Float> transType = new HashMap<>();
+    //     for(String key : userObj.keySet()) {
+    //         if(key.contains("out_")) {
+    //             transType.put(key.split("_")[1], Float.parseFloat(userObj.getString(key)));
+    //         }
+    //     }
+    //     JsonObject param3 = chartObj("doughnut", transType.keySet(), 
+    //         transType.values().stream().toList());
+    //     imgUrls.put("Spending Categories", getUrl(param3));
+    //     return imgUrls;
+    // }
 
     private String getUrl(JsonObject param) {
         RequestEntity<String> req = RequestEntity.post(CHART_RENDER_URL)
@@ -225,9 +236,11 @@ public class UserService {
     }
 
     public JsonObject chartObj(String type, Set<String> labels, List<Float> data) {
+        logger.info("[Service] Float array: " + buildFloatArray(data));
         JsonObject dataObj = Json.createObjectBuilder()
             .add("datasets", Json.createArrayBuilder()
                 .add(Json.createObjectBuilder()
+                    .add("label", "Amount")
                     .add("data", buildFloatArray(data))
                     .add("backgroundColor", buildStringArray(BG_COLOR))
                     .build())
@@ -275,8 +288,10 @@ public class UserService {
 
     private JsonArray buildFloatArray(List<Float> values) {
         JsonArrayBuilder builder = Json.createArrayBuilder();
-        for(Float value : values)
-            builder.add(value);
+        for(Float value : values){
+            // Pass as integer
+            builder.add(Math.round(value));
+        }
         return builder.build();
     }
 
@@ -304,7 +319,7 @@ public class UserService {
 
     public JsonObject getDailyTrend(List<Transaction> transactions) {
         // Daily cashflow
-        Map<String, Float> cashMap = new HashMap<>();
+        Map<String, Float> cashMap = new TreeMap<>();
         for(Transaction trans : transactions) {
             // [DATE] [CASHFLOW] TYPE CURR AMT
             String date = trans.getDate();
@@ -324,21 +339,21 @@ public class UserService {
 
     public JsonObject getMonthlyTrend(List<Transaction> transactions) {
         // Monthly cashflow
-        Map<String, Float> cashMap = new HashMap<>();
+        Map<String, Float> cashMap = new TreeMap<>();
         for(Transaction trans : transactions) {
             // [DATE] [CASHFLOW] TYPE CURR AMT
-            String month = MONTHS[Integer.parseInt(trans.getDate().split("-")[1])];
-            logger.info("[Service] Month: " + month);
+            String ym = trans.getDate().split("-")[0] + "-" + trans.getDate().split("-")[1];
             String flow = trans.getCashflow().toLowerCase();
             float amt = trans.getAmt();
             if(flow.equals(OUT))
                 amt *= -1;
-            if(!cashMap.containsKey(month)) {
-                cashMap.put(month, amt);
+            if(!cashMap.containsKey(ym)) {
+                cashMap.put(ym, amt);
             } else {
-                cashMap.put(month, cashMap.get(month) + amt);
+                cashMap.put(ym, cashMap.get(ym) + amt);
             }
         }
+        logger.info("[Service] CashMap: " + cashMap);
         return chartObj("bar", cashMap.keySet(), 
             cashMap.values().stream().toList());
     }
@@ -387,6 +402,46 @@ public class UserService {
                 getUrl(chartsById.getJsonObject("trends")), 
                 getUrl(chartsById.getJsonObject("spending categories"))));
         }
+        Collections.sort(logDetails, (a, b) -> a.getLogName().compareTo(b.getLogName()));
+        logger.info("[Service] Order of log details: " + logDetails);
         return logDetails;
     }
+
+    public float convertCurrency(String from, String to) {
+        String url = UriComponentsBuilder.fromUriString(CONVERT_URL)
+            .queryParam("apikey", CURR_APIKEY)
+            .queryParam("currencies", to)
+            .queryParam("base_currency", from)
+            .toUriString();
+        
+        RequestEntity<Void> req = RequestEntity.get(url)
+            .build();
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> resp = restTemplate.exchange(req, String.class);
+        String payload = resp.getBody();
+
+        JsonReader reader = Json.createReader(new StringReader(payload));
+        logger.info("[Repo] Payload from currency conversion: " + payload);
+        float conversion = Float.parseFloat(reader.readObject()
+            .getJsonObject("data")
+            .getJsonNumber(to)
+            .toString());
+        
+        return conversion;
+    }
+
+    public ResponseEntity<String> checkHealth() {
+		try {
+            userRepo.checkHealth();
+            return ResponseEntity.status(200)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{}");
+
+        } catch (Exception ex) {
+            return ResponseEntity.status(503)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{}");
+        }
+	}
 }

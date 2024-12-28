@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../static/appstyle.css">
+    <link rel="stylesheet" href="/appstyle.css">
     <link rel="icon" type="image/x-icon" href="/image/new_logo.png">
     <title>Information</title>
 </head>
@@ -33,14 +33,13 @@
             </td>
         </tr>
     </table>
-    <br>
 
     <div class="header">
         <span>User Profile</span>
     </div>
 
     <div class="log-container" data-th-each="logDetail:${logDetails}" data-th-object="${logDetail}">
-        <div data-th-text="*{logName}"></div>
+        <div class="name" data-th-text="*{logName}"></div>
         <div class="track-header">
             <h6 class="gold width-third">Balance: $<span class="underline" data-th-text="*{balance}"></span></h6>
             <h6 class="green width-third">IN: $<span class="underline" data-th-text="*{in}"></span></h6>
@@ -58,7 +57,5 @@
         </div>
     </div>
     
-
-
 </body>
 </html>

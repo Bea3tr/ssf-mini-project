@@ -54,7 +54,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/changedetails")
-    public ModelAndView changePassword(
+    public ModelAndView changeDetails(
             @PathVariable String userId,
             HttpSession sess) {
 
@@ -86,6 +86,7 @@ public class UserController {
         ModelAndView mav = new ModelAndView();
         if (bindings.hasErrors()) {
             mav.setViewName("change-details");
+            mav.addObject("currList", userSvc.currencyList());
             mav.setStatus(HttpStatusCode.valueOf(400));
             return mav;
 
@@ -94,6 +95,7 @@ public class UserController {
             FieldError err = new FieldError("user", "password", "Incorrect password");
             bindings.addError(err);
             mav.setViewName("change-details");
+            mav.addObject("currList", userSvc.currencyList());
             mav.setStatus(HttpStatusCode.valueOf(400));
             return mav;
         }
@@ -103,6 +105,7 @@ public class UserController {
             userSvc.changeUserId(id, user.getUserId());
 
         mav.setViewName("successful-change");
+        sess.setAttribute(USERID, user.getUserId());
         mav.setStatus(HttpStatusCode.valueOf(200));
         return mav;
     }
@@ -125,7 +128,6 @@ public class UserController {
             logger.info("[User Controller] Redirecting to delete travel log");
             mav.setViewName("delete-log");
             mav.addObject("id", travelId);
-            mav.addObject("user", new ValidUser());
         } else {
             logger.info("[User Controller] Redirecting to delete account");
             mav.setViewName("delete");
@@ -175,7 +177,7 @@ public class UserController {
     @PostMapping("/{travelId}/delete")
     public ModelAndView postDelete(
             @PathVariable String travelId,
-            @Valid @ModelAttribute("user") ValidUser user,
+            @Valid @RequestBody MultiValueMap<String, String> form,
             BindingResult bindings,
             HttpSession sess) {
 
@@ -184,23 +186,27 @@ public class UserController {
 
         ModelAndView mav = new ModelAndView();
         if (bindings.hasErrors()) {
-            mav.setViewName("delete");
+            mav.setViewName("delete-log");
             mav.setStatus(HttpStatusCode.valueOf(400));
             return mav;
 
-        } else if (!user.getUserId().equals(travelId)) {
+        } else if (!form.getFirst("logId").equals(travelId)) {
             logger.info("[User Controller] Incorrect log id");
-            FieldError err = new FieldError("user", "user", "Incorrect log ID");
+            ObjectError err = new ObjectError("logId", "Incorrect log ID");
             bindings.addError(err);
-            mav.setViewName("delete");
+            mav.setViewName("delete-log");
+            mav.addObject("error", bindings.getAllErrors());
+            mav.addObject("id", travelId);
             mav.setStatus(HttpStatusCode.valueOf(400));
             return mav;
 
-        } else if (!user.getPassword().equals(currUser.getPassword())) {
+        } else if (!form.getFirst("password").equals(currUser.getPassword())) {
             logger.info("[User Controller] Incorrect password");
-            FieldError err = new FieldError("user", "password", "Incorrect password");
+            ObjectError err = new ObjectError("password", "Incorrect password");
             bindings.addError(err);
-            mav.setViewName("delete");
+            mav.setViewName("delete-log");
+            mav.addObject("error", bindings.getAllErrors());
+            mav.addObject("id", travelId);
             mav.setStatus(HttpStatusCode.valueOf(400));
             return mav;
         }
@@ -236,9 +242,13 @@ public class UserController {
         } else {
             logger.info("[User Controller] Redirecting to travel logs");
             User user = userSvc.getUserById(travelId);
+            float conversion = userSvc.convertCurrency(user.getDefCurr(), userSvc.getDefCurr(userId));
             mav.setViewName("travel");
             mav.addObject("user", user);
             mav.addObject("userId", userId);
+            mav.addObject("defCurr", userSvc.getDefCurr(userId));
+            mav.addObject("balance", ROUND_AMT(user.getBalance() * conversion));
+            mav.addObject("out", ROUND_AMT(user.getOut() * conversion));
             mav.addObject("transactions", user.getTransactions());
             mav.addObject("years", userSvc.getYearList(travelId));
         }
@@ -259,6 +269,7 @@ public class UserController {
         String transType = form.getFirst("transtype");
         String currency = form.getFirst("currency");
         float amt = Float.parseFloat(form.getFirst("amt"));
+        logger.info("[User Controller] Amount from form: " + amt);
         Date date = new Date();
         try {
             date = DF.parse(form.getFirst("date"));
@@ -308,10 +319,14 @@ public class UserController {
         userSvc.insertUserTrip(userId, form.getFirst("name"), form.getFirst("destCurr"));
         logger.info("[User Controller] Redirecting to travel logs");
         User user = userSvc.getUserById(TRAVEL_ID(userId, form.getFirst("name")));
+        float conversion = userSvc.convertCurrency(user.getDefCurr(), userSvc.getDefCurr(userId));
         mav.setViewName("travel");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
         mav.addObject("userId", userId);
+        mav.addObject("defCurr", userSvc.getDefCurr(userId));
+        mav.addObject("balance", ROUND_AMT(user.getBalance() * conversion));
+        mav.addObject("out", ROUND_AMT(user.getOut() * conversion));
         mav.addObject("transactions", user.getTransactions());
         mav.addObject("years", userSvc.getYearList(user.getUserId()));
         
@@ -341,8 +356,12 @@ public class UserController {
         }
         userSvc.updateBal(travelId, currency, cashflow, transType, amt, date, false);
         User user = userSvc.getUserById(travelId);
+        float conversion = userSvc.convertCurrency(user.getDefCurr(), userSvc.getDefCurr(userId));
         model.addAttribute("user", user);
         model.addAttribute("userId", userId);
+        model.addAttribute("defCurr", userSvc.getDefCurr(userId));
+        model.addAttribute("balance", ROUND_AMT(user.getBalance() * conversion));
+        model.addAttribute("out", ROUND_AMT(user.getOut() * conversion));
         model.addAttribute("months", MONTHS);
         model.addAttribute("years", userSvc.getYearList(travelId));
         model.addAttribute("transactions", user.getTransactions());
@@ -405,7 +424,11 @@ public class UserController {
         model.addAttribute("currList", userSvc.currencyList());
         model.addAttribute("transactions", user.getTransactions());
         if(transId.contains("_")) {
+            float conversion = userSvc.convertCurrency(user.getDefCurr(), userSvc.getDefCurr(userId));
             model.addAttribute("userId", userId);
+            model.addAttribute("defCurr", userSvc.getDefCurr(userId));
+            model.addAttribute("balance", ROUND_AMT(user.getBalance() * conversion));
+            model.addAttribute("out", ROUND_AMT(user.getOut() * conversion));
             return "travel";
         }
         return "logs";
@@ -425,8 +448,10 @@ public class UserController {
             mav.setStatus(HttpStatusCode.valueOf(401));
             return mav;
         }
-        if(form.getFirst("travelId") != null) 
-            userId = form.getFirst("travelId");
+        String defCurr = userSvc.getDefCurr(userId);
+        if(travelId != null) {
+            userId = travelId;
+        }
         
         int year = Integer.parseInt(form.getFirst("year"));
         int month = Integer.parseInt(form.getFirst("month"));
@@ -439,7 +464,11 @@ public class UserController {
         mav.addObject("years", userSvc.getYearList(userId));
         mav.addObject("transactions", userSvc.getFilteredTransactions(TRANSACTION_ID(userId), year, month));
         if(userId.contains("_")){
+            float conversion = userSvc.convertCurrency(user.getDefCurr(), defCurr);
             mav.addObject("userId", userId);
+            mav.addObject("defCurr", userSvc.getDefCurr(userId));
+            mav.addObject("balance", ROUND_AMT(user.getBalance() * conversion));
+            mav.addObject("out", ROUND_AMT(user.getOut() * conversion));
             mav.setViewName("travel");
         } else {
             mav.setViewName("logs");
@@ -469,6 +498,8 @@ public class UserController {
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
         mav.addObject("imgList", userSvc.getCharts(userId, "2024-ALL"));
+        mav.addObject("months", MONTHS);
+        mav.addObject("years", userSvc.getYearList(userId));
         mav.addObject("transactions", user.getTransactions().subList(0, toIndex));
 
         return mav;

@@ -1,5 +1,7 @@
 package ssf.budgetbliss.models;
 
+import static ssf.budgetbliss.models.Constants.ROUND_AMT;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -47,7 +49,7 @@ public class Transaction {
                                 .replaceAll("\\:", "")
                                 .split(" ");
         return new Transaction(transDetails[0], transDetails[1], transDetails[2], 
-            transDetails[3], Float.parseFloat(transDetails[4]));
+            transDetails[3], ROUND_AMT(Float.parseFloat(transDetails[4])));
     }
 
     public static List<Transaction> stringToTransactions(List<String> transactions) {

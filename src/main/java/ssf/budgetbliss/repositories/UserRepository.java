@@ -45,10 +45,7 @@ public class UserRepository {
     @Value("${curr.apikey}")
     private String CURR_APIKEY;
 
-    @Autowired @Qualifier("redis-obj")
-    private RedisTemplate<String, Object> templateObj;
-
-    @Autowired @Qualifier("redis-string")
+    @Autowired @Qualifier("redis-0")
     private RedisTemplate<String, String> template;
 
     public List<String> getAllUserLogs(String userId) {
@@ -109,8 +106,12 @@ public class UserRepository {
         return user;
     }
 
+    public String getDefCurr(String userId) {
+        return template.opsForHash().get(userId, DEF_CURR).toString();
+    }
+
     public void updateBal(String userId, String fromCurr, String cashflow, String trans_type, float amt, Date date, boolean isEdit) {
-        logger.info("[Repo] Updating balance");
+        logger.info("[Repo] Updating balance. Float amount: " + amt);
         HashOperations<String, String, Object> hashOps = template.opsForHash();
         String toCurr = hashOps.get(userId, DEF_CURR).toString();
         if(!fromCurr.equals(toCurr)) {
@@ -130,6 +131,9 @@ public class UserRepository {
 
         catBal += amt;
         hashOps.put(userId, BALANCE, ROUND_AMT(balance));
+        logger.info("[Repo] Amount put in balance before rounding: " + balance);
+        logger.info("[Repo] Amount put in balance: " + ROUND_AMT(balance));
+        logger.info("[Repo] New balance: " + hashOps.get(userId, BALANCE));
         hashOps.put(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase(), ROUND_AMT(catBal));
         String year = DF.format(date).split("-")[0];
         if(!template.opsForList().range(YEARLIST(userId), 0, -1).contains(year)) {
@@ -140,9 +144,16 @@ public class UserRepository {
     }
 
     public void changeUserId(String userId, String newId) { 
-        User user = dbToUser(template.opsForHash(), template.opsForList(), userId);
-        template.delete(userId);
-        updateUser(template.opsForHash(), template.opsForList(), newId, user);
+        List<String> allLogs = getAllUserLogs(userId);
+        for (String logId : allLogs) {
+            User user = dbToUser(template.opsForHash(), template.opsForList(), logId);
+            template.delete(template.keys(logId + "*"));
+            if(logId.contains("_")) {
+                String travelId = logId.split("_", 2)[1];
+                newId = TRAVEL_ID(newId, travelId);
+            }
+            updateUser(template.opsForHash(), template.opsForList(), newId, user);
+        }
     }
 
     public boolean changePassword(String userId, String password, String newPassword) {
@@ -315,7 +326,8 @@ public class UserRepository {
     private void updateUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId, User user) {
         Map<String, Object> values = new HashMap<>();
         values.put(USERID, user.getUserId());
-        values.put(PASSWORD, user.getPassword());
+        if(!userId.contains("_"))
+            values.put(PASSWORD, user.getPassword());
         values.put(DEF_CURR, user.getDefCurr());
         values.put(BALANCE, user.getBalance());
         values.put(IN, user.getIn());
@@ -333,17 +345,22 @@ public class UserRepository {
             HashOperations<String, String, Object> hashOps = template.opsForHash();
             String hashKey = trans.getCashflow().toLowerCase()+"_"+trans.getTransType().toLowerCase();
             float ogAmt = Float.parseFloat(hashOps.get(userId, hashKey).toString());
+            float transAmt = trans.getAmt();
             if(!trans.getCurr().equals(hashOps.get(userId, DEF_CURR)))
-                ogAmt *= convertCurrency(trans.getCurr(), hashOps.get(userId, DEF_CURR).toString());
+                transAmt *= convertCurrency(trans.getCurr(), hashOps.get(userId, DEF_CURR).toString());
             // Update cashflow category 
-            hashOps.put(userId, hashKey, ROUND_AMT(ogAmt - trans.getAmt()));
-            logger.info("[Repo] Updated %s from %.2f to %.2f".formatted(hashKey, ogAmt, ogAmt-trans.getAmt()));
+            hashOps.put(userId, hashKey, ROUND_AMT(ogAmt - transAmt));
+            logger.info("[Repo] Updated %s from %.2f to %.2f".formatted(hashKey, ogAmt, ogAmt-transAmt));
             // Update balance
             logger.info("[Repo] Cashflow: " + trans.getCashflow());
             if(trans.getCashflow().equals("IN"))
-                hashOps.put(userId, BALANCE, ROUND_AMT(Float.parseFloat(hashOps.get(userId, BALANCE).toString()) - trans.getAmt()));
+                hashOps.put(userId, BALANCE, ROUND_AMT(Float.parseFloat(hashOps.get(userId, BALANCE).toString()) - transAmt));
             else 
-                hashOps.put(userId, BALANCE, ROUND_AMT(Float.parseFloat(hashOps.get(userId, BALANCE).toString()) + trans.getAmt()));
+                hashOps.put(userId, BALANCE, ROUND_AMT(Float.parseFloat(hashOps.get(userId, BALANCE).toString()) + transAmt));
         }
     }
+
+    public void checkHealth() throws Exception {
+		template.randomKey();
+	}
 }

@@ -38,8 +38,12 @@
         <span>LOGS - TRAVEL</span>
     </div>
     <div class="travel-header">
-        <h6 class="green width-half">Remaining: $<span class="underline" data-th-text="*{balance}"></span></h6>
-        <h6 class="red width-half">Expenditure: $<span class="underline" data-th-text="*{out}"></span></h6>
+        <h6 class="green width-half">Remaining: <span data-th-text="${defCurr}"></span> <span class="underline" data-th-text="${balance}"></span></h6>
+        <h6 class="red width-half">Expenditure: <span data-th-text="${defCurr}"></span> <span class="underline" data-th-text="${out}"></span></h6>
+    </div>
+    <div class="travel-header">
+        <h6 class="green width-half">Remaining: <span data-th-text="*{defCurr}"></span> <span class="underline" data-th-text="*{balance}"></span></h6>
+        <h6 class="red width-half">Expenditure: <span data-th-text="*{defCurr}"></span> <span class="underline" data-th-text="*{out}"></span></h6>
     </div>
     
     <div>
@@ -116,7 +120,6 @@
                 </th>
                 <th class="trans-form">
                     <form method="GET" data-th-action="@{/{id}/{travelId}/filtered(id=${userId}, travelId=*{userId})}">
-                        <hidden type="text" name="travelId" data-th-value="*{userId}"></hidden>
                         <div class="flex-row">
                             <select name="year">
                                 <option data-th-each="year:${years}" data-th-value="${year}" data-th-text="${year}"></option>
@@ -154,27 +157,6 @@
                 </td>
             </tr>
         </table>
-        <!-- <table class="trans-table" data-th-unless="${filtered == false}">
-            <tr data-th-each="transaction, status:${transactions}">
-                <td data-th-text="${transaction}"></td>
-                <td class="right">
-                    <div class="flex-button">
-                        <form method="GET" data-th-action="@{/{id}/{travelId}/edit(id=${userId}, travelId=*{userId})}">
-                            <input type="hidden" name="index" data-th-value="${status.index}">
-                            <button class="log-buttons" type="submit">
-                                <img src="/image/edit.png">
-                            </button>
-                        </form>
-                        <form method="POST" action="/delete-transaction">
-                            <input type="hidden" name="index" data-th-value="${status.index}">
-                            <button class="log-buttons" type="submit">
-                                <img src="/image/bin.png">
-                            </button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-        </table> -->
     </div>
 
     <script src="/script.js"></script>

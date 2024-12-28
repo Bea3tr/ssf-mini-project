@@ -35,6 +35,10 @@ public class LogDetails {
         this.trendUrl = trendUrl;
         this.categoryUrl = categoryUrl;
     }
+    @Override
+    public String toString() {
+        return "LogDetails [logName=" + logName + ", balance=" + balance + ", in=" + in + ", out=" + out + ", trendUrl="
+                + trendUrl + ", categoryUrl=" + categoryUrl + "]";
+    }
 
-    
 }

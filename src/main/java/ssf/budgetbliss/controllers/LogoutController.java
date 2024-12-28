@@ -22,15 +22,12 @@ public class LogoutController {
             return "logout-fail";
         }
         sess.invalidate();
-        model.addAttribute(USERID, userId);
         return "logout";
     }
 
     @PostMapping
     public String postLogout(Model model, HttpSession sess) {
-        String userId = (String) sess.getAttribute(USERID);
         sess.invalidate();
-        model.addAttribute(USERID, userId);
         return "logout";
     }
     

@@ -247,8 +247,8 @@ label {
 }
 
 .log-container {
-    width: 90%;
-    max-width: 800px;
+    width: 100%;
+    max-width: 1000px;
     margin: 20px auto;
     background: white;
     padding: 20px;
@@ -455,6 +455,13 @@ button {
     background-color: red;
     color: white;
     font-weight: bolder;
+}
+.name {
+    text-align: center;
+    font-weight: bolder;
+    background-color: lightgray;
+    padding: 10px;
+    border-radius: 10px;
 }
 .error {
     font-size:  12px;
