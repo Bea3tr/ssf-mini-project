@@ -97,6 +97,10 @@ public class UserService {
         userRepo.deleteUser(userId);
     }
 
+    public void deleteLog(String logId) {
+        userRepo.deleteLog(logId);
+    }
+
     public List<String> getTransactions(String transId) {
         return userRepo.getTransactions(transId);
     }

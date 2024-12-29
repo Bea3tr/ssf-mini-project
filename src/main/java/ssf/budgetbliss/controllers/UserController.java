@@ -219,7 +219,7 @@ public class UserController {
             mav.setStatus(HttpStatusCode.valueOf(400));
             return mav;
         }
-        userSvc.deleteUser(travelId);
+        userSvc.deleteLog(travelId);
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", userSvc.getUserById(id));
         mav.addObject("logs", userSvc.getTravelLogs(id));

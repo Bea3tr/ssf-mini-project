@@ -178,6 +178,13 @@ public class UserRepository {
         template.delete(template.keys(userId + "*"));
     }
 
+    public void deleteLog(String logId) {
+        logger.info("[Repo] Deleting log: " + logId);
+        template.delete(logId);
+        template.delete(TRANSACTION_ID(logId));
+        template.delete(YEARLIST(logId));
+    }
+
     public Set<String> getCurrency() {
         if(template.hasKey("currencyList")) {
             logger.info("[Repo] Retrieving currency list from database");
