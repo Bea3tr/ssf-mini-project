@@ -352,8 +352,8 @@ public class UserRepository {
             values.put(PASSWORD, user.getPassword());
         values.put(DEF_CURR, user.getDefCurr());
         values.put(BALANCE, user.getBalance());
-        values.put(IN, user.getIn());
-        values.put(OUT, user.getOut());
+        values.put(IN + "_", user.getIn());
+        values.put(OUT + "_", user.getOut());
         hashOps.putAll(userId, values);
         for (String trans : user.getTransactions()) {
             listOps.rightPush(TRANSACTION_ID(userId), trans);

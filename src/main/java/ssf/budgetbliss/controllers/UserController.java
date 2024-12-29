@@ -458,8 +458,8 @@ public class UserController {
             return mav;
         }
         String defCurr = userSvc.getDefCurr(userId);
-        String id = userId;
         if(travelId != null) {
+            mav.addObject("userId", userId);
             userId = travelId;
         }
         
@@ -475,7 +475,6 @@ public class UserController {
         mav.addObject("transactions", userSvc.getFilteredTransactions(TRANSACTION_ID(userId), year, month));
         if(userId.contains("_")){
             float conversion = userSvc.getConversion(user.getDefCurr(), defCurr);
-            mav.addObject("userId", id);
             mav.addObject("defCurr", defCurr);
             mav.addObject("balance", ROUND_AMT(user.getBalance() * conversion));
             mav.addObject("out", ROUND_AMT(user.getOut() * conversion));

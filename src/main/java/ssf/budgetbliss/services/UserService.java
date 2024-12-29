@@ -236,7 +236,6 @@ public class UserService {
     }
 
     public JsonObject chartObj(String type, Set<String> labels, List<Float> data) {
-        logger.info("[Service] Float array: " + buildFloatArray(data));
         JsonObject dataObj = Json.createObjectBuilder()
             .add("datasets", Json.createArrayBuilder()
                 .add(Json.createObjectBuilder()
