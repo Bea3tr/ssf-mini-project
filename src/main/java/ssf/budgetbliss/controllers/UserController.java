@@ -90,6 +90,15 @@ public class UserController {
             mav.setStatus(HttpStatusCode.valueOf(400));
             return mav;
 
+        } else if (userSvc.userExists(user.getUserId())) {
+            logger.info("[User Controller] Username in use");
+            FieldError err = new FieldError("user", "userId", "Username in use");
+            bindings.addError(err);
+            mav.setViewName("change-details");
+            mav.addObject("currList", userSvc.currencyList());
+            mav.setStatus(HttpStatusCode.valueOf(400));
+            return mav;
+
         } else if (!userSvc.changePassword(id, user.getPassword(), user.getConfirmPassword())) {
             logger.info("[User Controller] Password change unsuccessful");
             FieldError err = new FieldError("user", "password", "Incorrect password");
@@ -449,6 +458,7 @@ public class UserController {
             return mav;
         }
         String defCurr = userSvc.getDefCurr(userId);
+        String id = userId;
         if(travelId != null) {
             userId = travelId;
         }
@@ -465,8 +475,8 @@ public class UserController {
         mav.addObject("transactions", userSvc.getFilteredTransactions(TRANSACTION_ID(userId), year, month));
         if(userId.contains("_")){
             float conversion = userSvc.getConversion(user.getDefCurr(), defCurr);
-            mav.addObject("userId", userId);
-            mav.addObject("defCurr", userSvc.getDefCurr(userId));
+            mav.addObject("userId", id);
+            mav.addObject("defCurr", defCurr);
             mav.addObject("balance", ROUND_AMT(user.getBalance() * conversion));
             mav.addObject("out", ROUND_AMT(user.getOut() * conversion));
             mav.setViewName("travel");
@@ -601,7 +611,12 @@ public class UserController {
         model.addAttribute("years", userSvc.getYearList(id));
         model.addAttribute("transactions", user.getTransactions());
         if(id.contains("_")){
-            model.addAttribute("userId", sess.getAttribute(USERID));
+            String userId = (String) sess.getAttribute(USERID);
+            float conversion = userSvc.getConversion(user.getDefCurr(), userSvc.getDefCurr(userId));
+            model.addAttribute("defCurr", userSvc.getDefCurr(userId));
+            model.addAttribute("balance", ROUND_AMT(user.getBalance() * conversion));
+            model.addAttribute("out", ROUND_AMT(user.getOut() * conversion));
+            model.addAttribute("userId", userId);
             return "travel";
         }
         return "logs";
