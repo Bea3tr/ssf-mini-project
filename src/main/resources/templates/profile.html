@@ -41,9 +41,9 @@
     <div class="log-container" data-th-each="logDetail:${logDetails}" data-th-object="${logDetail}">
         <div class="name" data-th-text="*{logName}"></div>
         <div class="track-header">
-            <h6 class="gold width-third">Balance: $<span class="underline" data-th-text="*{balance}"></span></h6>
-            <h6 class="green width-third">IN: $<span class="underline" data-th-text="*{in}"></span></h6>
-            <h6 class="red width-third">OUT: $<span class="underline" data-th-text="*{out}"></span></h6>
+            <h6 class="gold width-third">Balance: <span data-th-text="*{defCurr}"></span> <span class="underline" data-th-text="*{balance}"></span></h6>
+            <h6 class="green width-third">IN: <span data-th-text="*{defCurr}"></span> <span class="underline" data-th-text="*{in}"></span></h6>
+            <h6 class="red width-third">OUT: <span data-th-text="*{defCurr}"></span> <span class="underline" data-th-text="*{out}"></span></h6>
         </div>
         <div class="grid">
             <div class="card">

@@ -397,7 +397,7 @@ public class UserService {
                 .getJsonObject(userId)
                 .getJsonObject(id);
 
-            logDetails.add(new LogDetails(id, user.getBalance(), user.getIn(), user.getOut(), 
+            logDetails.add(new LogDetails(id, user.getDefCurr(), user.getBalance(), user.getIn(), user.getOut(), 
                 getUrl(chartsById.getJsonObject("trends")), 
                 getUrl(chartsById.getJsonObject("spending categories"))));
         }

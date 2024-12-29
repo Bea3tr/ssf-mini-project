@@ -90,7 +90,7 @@ public class ResponseController {
 
         // Filter by id
         for(String logId : idList) {
-            transById.put(logId, Transaction.stringToTransactions(userSvc.getTransactions(TRANSACTION_ID(id))));
+            transById.put(logId, Transaction.stringToTransactions(userSvc.getTransactions(TRANSACTION_ID(logId))));
         }
         JsonObjectBuilder chartBuilder = Json.createObjectBuilder();
         for(String logId : transById.keySet()) {
