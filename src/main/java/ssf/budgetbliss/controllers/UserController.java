@@ -242,7 +242,7 @@ public class UserController {
         } else {
             logger.info("[User Controller] Redirecting to travel logs");
             User user = userSvc.getUserById(travelId);
-            float conversion = userSvc.convertCurrency(user.getDefCurr(), userSvc.getDefCurr(userId));
+            float conversion = userSvc.getConversion(user.getDefCurr(), userSvc.getDefCurr(userId));
             mav.setViewName("travel");
             mav.addObject("user", user);
             mav.addObject("userId", userId);
@@ -319,7 +319,7 @@ public class UserController {
         userSvc.insertUserTrip(userId, form.getFirst("name"), form.getFirst("destCurr"));
         logger.info("[User Controller] Redirecting to travel logs");
         User user = userSvc.getUserById(TRAVEL_ID(userId, form.getFirst("name")));
-        float conversion = userSvc.convertCurrency(user.getDefCurr(), userSvc.getDefCurr(userId));
+        float conversion = userSvc.getConversion(user.getDefCurr(), userSvc.getDefCurr(userId));
         mav.setViewName("travel");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("user", user);
@@ -356,7 +356,7 @@ public class UserController {
         }
         userSvc.updateBal(travelId, currency, cashflow, transType, amt, date, false);
         User user = userSvc.getUserById(travelId);
-        float conversion = userSvc.convertCurrency(user.getDefCurr(), userSvc.getDefCurr(userId));
+        float conversion = userSvc.getConversion(user.getDefCurr(), userSvc.getDefCurr(userId));
         model.addAttribute("user", user);
         model.addAttribute("userId", userId);
         model.addAttribute("defCurr", userSvc.getDefCurr(userId));
@@ -424,7 +424,7 @@ public class UserController {
         model.addAttribute("currList", userSvc.currencyList());
         model.addAttribute("transactions", user.getTransactions());
         if(transId.contains("_")) {
-            float conversion = userSvc.convertCurrency(user.getDefCurr(), userSvc.getDefCurr(userId));
+            float conversion = userSvc.getConversion(user.getDefCurr(), userSvc.getDefCurr(userId));
             model.addAttribute("userId", userId);
             model.addAttribute("defCurr", userSvc.getDefCurr(userId));
             model.addAttribute("balance", ROUND_AMT(user.getBalance() * conversion));
@@ -464,7 +464,7 @@ public class UserController {
         mav.addObject("years", userSvc.getYearList(userId));
         mav.addObject("transactions", userSvc.getFilteredTransactions(TRANSACTION_ID(userId), year, month));
         if(userId.contains("_")){
-            float conversion = userSvc.convertCurrency(user.getDefCurr(), defCurr);
+            float conversion = userSvc.getConversion(user.getDefCurr(), defCurr);
             mav.addObject("userId", userId);
             mav.addObject("defCurr", userSvc.getDefCurr(userId));
             mav.addObject("balance", ROUND_AMT(user.getBalance() * conversion));

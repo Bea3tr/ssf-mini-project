@@ -116,7 +116,7 @@ public class UserRepository {
         String toCurr = hashOps.get(userId, DEF_CURR).toString();
         if(!fromCurr.equals(toCurr)) {
             logger.info("[Repo] Updating currency from %s to %s".formatted(fromCurr, toCurr));
-            float conversion = convertCurrency(fromCurr, toCurr);
+            float conversion = getConversion(fromCurr, toCurr);
             amt *= conversion;
         }
         float balance = Float.parseFloat(hashOps.get(userId, BALANCE).toString());
@@ -131,8 +131,6 @@ public class UserRepository {
 
         catBal += amt;
         hashOps.put(userId, BALANCE, ROUND_AMT(balance));
-        logger.info("[Repo] Amount put in balance before rounding: " + balance);
-        logger.info("[Repo] Amount put in balance: " + ROUND_AMT(balance));
         logger.info("[Repo] New balance: " + hashOps.get(userId, BALANCE));
         hashOps.put(userId, cashflow.toLowerCase() + "_" + trans_type.toLowerCase(), ROUND_AMT(catBal));
         String year = DF.format(date).split("-")[0];
@@ -177,10 +175,10 @@ public class UserRepository {
         if(template.hasKey("currencyList")) {
             logger.info("[Repo] Retrieving currency list from database");
             return Stream.of(template.opsForValue().get("currencyList")
-            .toString()
-            .trim()
-            .split(","))
-            .collect(Collectors.toSet());
+                .toString()
+                .trim()
+                .split(","))
+                .collect(Collectors.toSet());
         }
         logger.info("[Repo] Retrieving currency list from api");
         return new HashSet<>();
@@ -248,15 +246,21 @@ public class UserRepository {
     public void updateCurr(String userId, String toCurr) {
         HashOperations<String, String, Object> hashOps = template.opsForHash();
         if(!hashOps.get(userId, DEF_CURR).toString().equals(toCurr)) {
-            float conversion = convertCurrency(hashOps.get(userId, DEF_CURR).toString(), toCurr);
-            hashOps.put(userId, BALANCE, ROUND_AMT(Float.parseFloat(hashOps.get(userId, BALANCE).toString()) * conversion));
-            for(String in : template.keys("in_")) {
-                hashOps.put(userId, in, ROUND_AMT(Float.parseFloat(hashOps.get(userId, in).toString()) * conversion));
+            Map<String, Object> userDetails = hashOps.entries(userId);
+            logger.info("[Repo - curr] Entries: " + userDetails);
+            float conversion = getConversion(userDetails.get(DEF_CURR).toString(), toCurr);
+            hashOps.put(userId, BALANCE, ROUND_AMT(Float.parseFloat(userDetails.get(BALANCE).toString()) * conversion));
+            for(String hashKey : userDetails.keySet()) {
+                if(hashKey.contains("in_")) {
+                    hashOps.put(userId, hashKey, ROUND_AMT(Float.parseFloat(userDetails.get(hashKey).toString()) * conversion));
+                }
+                else if(hashKey.contains("out_")) {
+                    hashOps.put(userId, hashKey, ROUND_AMT(Float.parseFloat(userDetails.get(hashKey).toString()) * conversion));
+                }
             }
-            for(String out : template.keys("out_")) {
-                hashOps.put(userId, out, ROUND_AMT(Float.parseFloat(hashOps.get(userId, out).toString()) * conversion));
-            }
-            template.opsForList().leftPush(TRANSACTION_ID(userId), "[%s] Converted currency from %s to %s".formatted(DF.format(new Date()), hashOps.get(userId, DEF_CURR), toCurr));
+            List<Transaction> updatedTrans = updateCurrTransactions(Transaction.stringToTransactions(template.opsForList().range(TRANSACTION_ID(userId), 0, -1)), toCurr, conversion);
+            updateTransactions(updatedTrans, userId);
+            hashOps.put(userId, DEF_CURR, toCurr);
         }
     }
 
@@ -276,10 +280,24 @@ public class UserRepository {
         return years;
     }
 
+    public float getConversion(String from, String to) {
+        HashOperations<String, String, Object> hashOps = template.opsForHash();
+        if(template.hasKey("conversionList")) {
+            Map<String, Object> conversions = hashOps.entries("conversionList");
+            if(conversions.containsKey(from+"_"+to)) {
+                logger.info("[Repo - Conversion] Retrieving conversion from database");
+                return Float.parseFloat(conversions.get(from+"_"+to).toString());
+            }
+        }
+        logger.info("[Repo - Conversion] Retrieving conversion from api");
+        return convertCurrency(from, to);
+    }
+
     /* Private Methods */
     private User dbToUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId) {
         logger.info("[Repo] Retrieving user information from database");
         Map<String, Object> userDetails = hashOps.entries(userId);
+        logger.info("[Repo - dbToUser] Entries: " + userDetails);
         User user = new User();
         float in = 0f;
         float out = 0f;
@@ -291,10 +309,10 @@ public class UserRepository {
         }
         if(!userId.contains("_")) {
             user = new User(userId, userDetails.get(PASSWORD).toString(), userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
-            in, out, listOps.range(TRANSACTION_ID(userId), 0, -1));
+            in, ROUND_AMT(out), listOps.range(TRANSACTION_ID(userId), 0, -1));
         } else {
             user = new User(userId, userDetails.get(DEF_CURR).toString(), Float.parseFloat(userDetails.get(BALANCE).toString()),
-            in, out, listOps.range(TRANSACTION_ID(userId), 0, -1));
+            in, ROUND_AMT(out), listOps.range(TRANSACTION_ID(userId), 0, -1));
         }
         return user;
     }
@@ -319,6 +337,10 @@ public class UserRepository {
             .getJsonObject("data")
             .getJsonNumber(to)
             .toString());
+
+        // Add to database
+        template.opsForHash().put("conversionList", from+"_"+to, conversion);
+        template.expire("conversionList", 1, TimeUnit.DAYS);
         
         return conversion;
     }
@@ -347,7 +369,7 @@ public class UserRepository {
             float ogAmt = Float.parseFloat(hashOps.get(userId, hashKey).toString());
             float transAmt = trans.getAmt();
             if(!trans.getCurr().equals(hashOps.get(userId, DEF_CURR)))
-                transAmt *= convertCurrency(trans.getCurr(), hashOps.get(userId, DEF_CURR).toString());
+                transAmt *= getConversion(trans.getCurr(), hashOps.get(userId, DEF_CURR).toString());
             // Update cashflow category 
             hashOps.put(userId, hashKey, ROUND_AMT(ogAmt - transAmt));
             logger.info("[Repo] Updated %s from %.2f to %.2f".formatted(hashKey, ogAmt, ogAmt-transAmt));
@@ -357,6 +379,21 @@ public class UserRepository {
                 hashOps.put(userId, BALANCE, ROUND_AMT(Float.parseFloat(hashOps.get(userId, BALANCE).toString()) - transAmt));
             else 
                 hashOps.put(userId, BALANCE, ROUND_AMT(Float.parseFloat(hashOps.get(userId, BALANCE).toString()) + transAmt));
+        }
+    }
+
+    private List<Transaction> updateCurrTransactions(List<Transaction> transactions, String toCurr, float conversion) {
+        for(Transaction trans : transactions) {
+            trans.setCurr(toCurr);
+            trans.setAmt(ROUND_AMT(trans.getAmt() * conversion));
+        }
+        return transactions;
+    }
+
+    private void updateTransactions(List<Transaction> updatedTrans, String userId) {
+        template.delete(TRANSACTION_ID(userId));
+        for(Transaction trans : updatedTrans) {
+            template.opsForList().rightPush(TRANSACTION_ID(userId), trans.toString());
         }
     }
 

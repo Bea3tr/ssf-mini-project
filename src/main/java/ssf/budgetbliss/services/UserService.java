@@ -407,28 +407,8 @@ public class UserService {
         return logDetails;
     }
 
-    public float convertCurrency(String from, String to) {
-        String url = UriComponentsBuilder.fromUriString(CONVERT_URL)
-            .queryParam("apikey", CURR_APIKEY)
-            .queryParam("currencies", to)
-            .queryParam("base_currency", from)
-            .toUriString();
-        
-        RequestEntity<Void> req = RequestEntity.get(url)
-            .build();
-
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<String> resp = restTemplate.exchange(req, String.class);
-        String payload = resp.getBody();
-
-        JsonReader reader = Json.createReader(new StringReader(payload));
-        logger.info("[Repo] Payload from currency conversion: " + payload);
-        float conversion = Float.parseFloat(reader.readObject()
-            .getJsonObject("data")
-            .getJsonNumber(to)
-            .toString());
-        
-        return conversion;
+    public float getConversion(String from, String to) {
+        return userRepo.getConversion(from, to);
     }
 
     public ResponseEntity<String> checkHealth() {

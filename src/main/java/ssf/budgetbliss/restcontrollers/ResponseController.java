@@ -7,7 +7,6 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,8 +35,6 @@ public class ResponseController {
 
     @Autowired
     private UserService userSvc;
-
-    private static final Logger logger = Logger.getLogger(ResponseController.class.getName());
     
     @PostMapping(path="/userdb", consumes=MediaType.APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> postUserDB(@RequestBody String payload) {
