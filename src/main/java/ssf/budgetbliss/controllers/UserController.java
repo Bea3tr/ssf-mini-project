@@ -90,7 +90,7 @@ public class UserController {
             mav.setStatus(HttpStatusCode.valueOf(400));
             return mav;
 
-        } else if (userSvc.userExists(user.getUserId())) {
+        } else if (!id.equals(user.getUserId()) && userSvc.userExists(user.getUserId())) {
             logger.info("[User Controller] Username in use");
             FieldError err = new FieldError("user", "userId", "Username in use");
             bindings.addError(err);

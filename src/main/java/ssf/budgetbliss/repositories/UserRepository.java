@@ -145,12 +145,17 @@ public class UserRepository {
         List<String> allLogs = getAllUserLogs(userId);
         for (String logId : allLogs) {
             User user = dbToUser(template.opsForHash(), template.opsForList(), logId);
-            template.delete(template.keys(logId + "*"));
+            List<Integer> years = getYears(logId);
+            template.delete(logId);
+            template.delete(template.keys(logId + "_*"));
             if(logId.contains("_")) {
                 String travelId = logId.split("_", 2)[1];
-                newId = TRAVEL_ID(newId, travelId);
+                updateUser(template.opsForHash(), template.opsForList(), TRAVEL_ID(newId, travelId), user);
+                insertYears(years, TRAVEL_ID(newId, travelId));
+            } else {
+                insertYears(years, newId);
+                updateUser(template.opsForHash(), template.opsForList(), newId, user);
             }
-            updateUser(template.opsForHash(), template.opsForList(), newId, user);
         }
     }
 
@@ -394,6 +399,12 @@ public class UserRepository {
         template.delete(TRANSACTION_ID(userId));
         for(Transaction trans : updatedTrans) {
             template.opsForList().rightPush(TRANSACTION_ID(userId), trans.toString());
+        }
+    }
+
+    private void insertYears(List<Integer> years, String userId) {
+        for (int year : years) {
+            template.opsForList().leftPush(YEARLIST(userId), Integer.toString(year));
         }
     }
 
