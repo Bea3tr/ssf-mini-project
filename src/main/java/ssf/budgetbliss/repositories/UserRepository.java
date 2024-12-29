@@ -147,7 +147,8 @@ public class UserRepository {
             User user = dbToUser(template.opsForHash(), template.opsForList(), logId);
             List<Integer> years = getYears(logId);
             template.delete(logId);
-            template.delete(template.keys(logId + "_*"));
+            template.delete(TRANSACTION_ID(logId));
+            template.delete(YEARLIST(logId));
             if(logId.contains("_")) {
                 String travelId = logId.split("_", 2)[1];
                 updateUser(template.opsForHash(), template.opsForList(), TRAVEL_ID(newId, travelId), user);
@@ -300,7 +301,7 @@ public class UserRepository {
 
     /* Private Methods */
     private User dbToUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId) {
-        logger.info("[Repo] Retrieving user information from database");
+        logger.info("[Repo] Retrieving user (" + userId + ")information from database");
         Map<String, Object> userDetails = hashOps.entries(userId);
         logger.info("[Repo - dbToUser] Entries: " + userDetails);
         User user = new User();
