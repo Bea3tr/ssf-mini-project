@@ -207,8 +207,8 @@ public class UserRepository {
         template.expire("currencyList", 30, TimeUnit.DAYS);
     }
 
-    public void editTransaction(String userId, int index, String edited) {
-        updateDeletedTransactions(userId, template.opsForList().index(TRANSACTION_ID(userId), index));
+    public void editTransaction(String userId, String ogTrans, String edited) {
+        deleteTransaction(userId, ogTrans);
         Transaction editedTrans = Transaction.stringToTransaction(edited);
         try {
             updateBal(userId, editedTrans.getCurr(), editedTrans.getCashflow(), editedTrans.getTransType(), 
@@ -217,7 +217,7 @@ public class UserRepository {
         } catch (ParseException ex) {
             logger.warning("[Repo - edit] Error parsing date. Balance not updated");
         }
-        template.opsForList().set(TRANSACTION_ID(userId), index, edited);
+        template.opsForList().leftPush(TRANSACTION_ID(userId), edited);
     }
 
     public void deleteTransaction(String userId, String transaction) {

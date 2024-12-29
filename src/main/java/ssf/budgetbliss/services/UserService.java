@@ -109,8 +109,8 @@ public class UserService {
         return userRepo.getFilteredTransactions(transId, year, month);
     }
 
-    public void editTransaction(String userId, int index, String edited) {
-        userRepo.editTransaction(userId, index, edited);
+    public void editTransaction(String userId, String ogTrans, String edited) {
+        userRepo.editTransaction(userId, ogTrans, edited);
     }
 
     public void deleteTransaction(String userId, String transaction) {

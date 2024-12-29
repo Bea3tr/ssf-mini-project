@@ -380,7 +380,7 @@ public class UserController {
     @GetMapping(path={"/{userId}/edit", "/{userId}/{travelId}/edit"})
     public ModelAndView getEdit(@PathVariable String userId,
             @PathVariable(required=false) String travelId,
-            @RequestParam("index") int index,
+            @RequestParam("transaction") String transaction,
             HttpSession sess) {
 
         ModelAndView mav = new ModelAndView();
@@ -394,7 +394,7 @@ public class UserController {
         mav.setViewName("edit");
         mav.setStatus(HttpStatusCode.valueOf(200));
         mav.addObject("userId", userId);
-        mav.addObject("index", index);
+        mav.addObject("transaction", transaction);
         mav.addObject("currList", userSvc.currencyList());
 
         if(travelId != null)
@@ -416,7 +416,7 @@ public class UserController {
         String cashflow = form.getFirst("cashflow");
         String currency = form.getFirst("currency");
         String transType = form.getFirst("transtype");
-        int index = Integer.parseInt(form.getFirst("index"));
+        String transaction = form.getFirst("transaction");
         float amt = Float.parseFloat(form.getFirst("amt"));
         Date date = new Date();
         try {
@@ -425,7 +425,7 @@ public class UserController {
             logger.info("[User Controller] Error parsing date input");
             ex.printStackTrace();
         }
-        userSvc.editTransaction(transId, index, userSvc.createTransaction(cashflow, currency, transType, amt, date));
+        userSvc.editTransaction(transId, transaction, userSvc.createTransaction(cashflow, currency, transType, amt, date));
         User user = userSvc.getUserById(transId);
         model.addAttribute("user", user);
         model.addAttribute("months", MONTHS);
