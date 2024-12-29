@@ -145,17 +145,18 @@ public class UserRepository {
         List<String> allLogs = getAllUserLogs(userId);
         for (String logId : allLogs) {
             User user = dbToUser(template.opsForHash(), template.opsForList(), logId);
+            Map<String, Float> catBal = getCategoryBal(logId);
             List<Integer> years = getYears(logId);
             template.delete(logId);
             template.delete(TRANSACTION_ID(logId));
             template.delete(YEARLIST(logId));
             if(logId.contains("_")) {
                 String travelId = logId.split("_", 2)[1];
-                updateUser(template.opsForHash(), template.opsForList(), TRAVEL_ID(newId, travelId), user);
+                updateUser(template.opsForHash(), template.opsForList(), TRAVEL_ID(newId, travelId), user, catBal);
                 insertYears(years, TRAVEL_ID(newId, travelId));
             } else {
                 insertYears(years, newId);
-                updateUser(template.opsForHash(), template.opsForList(), newId, user);
+                updateUser(template.opsForHash(), template.opsForList(), newId, user, catBal);
             }
         }
     }
@@ -351,15 +352,16 @@ public class UserRepository {
         return conversion;
     }
 
-    private void updateUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId, User user) {
+    private void updateUser(HashOperations<String, String, Object> hashOps, ListOperations<String, String> listOps, String userId, User user, Map<String, Float> catBal) {
         Map<String, Object> values = new HashMap<>();
-        values.put(USERID, user.getUserId());
+        values.put(USERID, userId);
         if(!userId.contains("_"))
             values.put(PASSWORD, user.getPassword());
         values.put(DEF_CURR, user.getDefCurr());
         values.put(BALANCE, user.getBalance());
-        values.put(IN + "_", user.getIn());
-        values.put(OUT + "_", user.getOut());
+        for(String category : catBal.keySet()) {
+            values.put(category, catBal.get(category));
+        }
         hashOps.putAll(userId, values);
         for (String trans : user.getTransactions()) {
             listOps.rightPush(TRANSACTION_ID(userId), trans);
@@ -407,6 +409,21 @@ public class UserRepository {
         for (int year : years) {
             template.opsForList().leftPush(YEARLIST(userId), Integer.toString(year));
         }
+    }
+
+    private Map<String, Float> getCategoryBal(String logId) {
+        Map<String, Float> catBal = new HashMap<>();
+        HashOperations<String, String, Object> hashOps = template.opsForHash();
+        Map<String, Object> logDetails = hashOps.entries(logId);
+        for (String hashKey : logDetails.keySet()) {
+            if(hashKey.contains("in_") || hashKey.contains("out_")) {
+                if(catBal.containsKey(hashKey)) 
+                    catBal.put(hashKey, catBal.get(hashKey) + Float.parseFloat(logDetails.get(hashKey).toString()));
+                else 
+                    catBal.put(hashKey, Float.parseFloat(logDetails.get(hashKey).toString()));
+            }
+        }
+        return catBal;
     }
 
     public void checkHealth() throws Exception {
