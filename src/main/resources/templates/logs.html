@@ -186,27 +186,6 @@
                 </td>
             </tr>
         </table>
-        <!-- <table class="trans-table" data-th-unless="${filtered == false}">
-            <tr data-th-each="transaction, status:${transactions}">
-                <td data-th-text="${transaction}"></td>
-                <td class="right">
-                    <div class="flex-button">
-                        <form method="GET" data-th-action="@{/{id}/edit(id=*{userId})}">
-                            <input type="hidden" name="index" data-th-value="${status.index}">
-                            <button class="log-buttons" type="submit">
-                                <img src="/image/edit.png">
-                            </button>
-                        </form>
-                        <form method="POST" action="/delete-transaction">
-                            <input type="hidden" name="index" data-th-value="${status.index}">
-                            <button class="log-buttons" type="submit">
-                                <img src="/image/bin.png">
-                            </button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-        </table> -->
     </div>
     <script src="/script.js"></script>
     
